@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Single-Level Category Model
+model Category {
+  id                 String              @id @default(cuid())
+  name               String
+  nameAr             String
+  slug               String              @unique
+  itemCount          Int                 @default(0)
+  image              String
+  banner             String?
+  iconName           String?
+  description        String?
+  descriptionAr      String?
+  isActive           Boolean             @default(true)
+  isFeatured         Boolean             @default(false)
+  displayOrder       Int                 @default(0)
+  seoTitle           String?
+  seoDescription     String?
+  seoKeywords        String?
+  isArchived         Boolean             @default(false)
+  products           Product[]
+  assignedAttributes CategoryAttribute[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now()) @updatedAt
+}
+
+// 2. Attribute Group (e.g. Performance, Display, Storage, General)
+model AttributeGroup {
+  id           String      @id @default(cuid())
+  name         String
+  nameAr       String
+  displayOrder Int         @default(0)
+  attributes   Attribute[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+// 3. Dynamic Attribute (e.g. RAM, GPU, Screen Size, Processor, Color)
+model Attribute {
+  id                  String                  @id @default(cuid())
+  name                String
+  nameAr              String
+  slug                String                  @unique // e.g. "ram", "processor", "gpu", "screen_size"
+  type                String                  @default("select") // text, number, select, multiselect, boolean, color, unit_number
+  unit                String?                 // e.g. "GB", "GHz", "inch", "Hz", "kg"
+  options             String?                 // JSON array of available options e.g. ["8 GB", "16 GB", "32 GB"]
+  groupId             String
+  group               AttributeGroup          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  categoryAssignments CategoryAttribute[]
+  productValues       ProductAttributeValue[]
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+}
+
+// 4. Category-to-Attribute Assignment (Dynamic Filter & Spec Configuration)
+model CategoryAttribute {
+  id                     String    @id @default(cuid())
+  categoryId             String
+  category               Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  attributeId            String
+  attribute              Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  isRequired             Boolean   @default(false)
+  displayOrder           Int       @default(0)
+  isFilterable           Boolean   @default(true) // Exposed as dynamic storefront catalog filter!
+  isSearchable           Boolean   @default(true)
+  isComparable           Boolean   @default(true)
+  isVisibleOnProductPage Boolean   @default(true)
+  isVariantOption        Boolean   @default(false) // Whether used for variant creation (e.g. Color/Storage)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@unique([categoryId, attributeId])
+}
+
+// 5. Product Model
+model Product {
+  id                    String                  @id
+  name                  String
+  nameAr                String
+  brand                 String
+  categoryId            String
+  category              Category                @relation(fields: [categoryId], references: [slug])
+  subCategory           String?
+  sku                   String                  @unique
+  barcode               String?
+  price                 Float
+  oldPrice              Float?
+  costPrice             Float?
+  compareAtPrice        Float?
+  discountPercentage    Int?
+  inStock               Boolean                 @default(true)
+  stockCount            Int                     @default(10)
+  lowStockThreshold     Int                     @default(5)
+  trackInventory        Boolean                 @default(true)
+  allowBackorders       Boolean                 @default(false)
+  shipsWithin           String                  @default("Ships within 24 hours")
+  shipsWithinAr         String                  @default("يتم الشحن خلال 24 ساعة")
+  isNew                 Boolean                 @default(false)
+  isBestSeller          Boolean                 @default(false)
+  isDeal                Boolean                 @default(false)
+  dealEndsIn            String?
+  status                String                  @default("active") // active, draft, scheduled, archived
+  weight                Float?
+  thumbnail             String
+  images                String                  @default("[]") // JSON array
+  description           String
+  descriptionAr         String
+  specs                 String                  // JSON key-value
+  specsAr               String?                 // JSON key-value
+  features              String?                 // JSON array
+  featuresAr            String?                 // JSON array
+  ramOptions            String?                 // JSON array
+  storageOptions        String?                 // JSON array
+  warrantyOptions       String?                 // JSON array
+  monthlyValu           Float?
+  monthlyAman           Float?
+  seoTitle              String?
+  metaDescription       String?
+  searchKeywords        String?
+  isArchived            Boolean                 @default(false)
+  variants              ProductVariant[]
+  attributeValues       ProductAttributeValue[]
+  inventoryTransactions InventoryTransaction[]
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+}
+
+// 6. Product Attribute Values (EAV Dynamic Specs)
+model ProductAttributeValue {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeId String
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  textValue   String?
+  numberValue Float?
+  booleanValue Boolean?
+  jsonValue   String?   // For multiselect or color values
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([productId, attributeId])
+}
+
+// 7. Product Variants (Color, Storage, Spec combinations)
+model ProductVariant {
+  id                    String                 @id @default(cuid())
+  productId             String
+  product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku                   String                 @unique
+  barcode               String?
+  price                 Float
+  oldPrice              Float?
+  costPrice             Float?
+  stockCount            Int                    @default(0)
+  image                 String?
+  status                String                 @default("active") // active, inactive
+  options               String                 // JSON e.g. {"RAM":"32 GB","Storage":"1 TB SSD"}
+  inventoryTransactions InventoryTransaction[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+}
+
+// 8. Inventory Transactions (Stock History Log)
+model InventoryTransaction {
+  id            String          @id @default(cuid())
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId     String?
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantityDelta Int             // e.g. +20 or -2
+  previousStock Int
+  newStock      Int
+  reason        String          // Restock, Order #1234, Adjustment, Damage
+  createdById   String?
+  createdByName String?
+  createdAt     DateTime        @default(now())
+}
+
+// 9. Audit Logs (Immutable Administrative Activity Timeline)
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  userName   String?
+  userEmail  String?
+  action     String   // PRODUCT_CREATE, PRODUCT_UPDATE, STOCK_ADJUST, CATEGORY_UPDATE, etc.
+  entityType String   // Product, Category, Attribute, Inventory, User
+  entityId   String
+  details    String   // JSON formatted payload
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+}
+
+model Order {
+  id            String      @id
+  createdAt     DateTime    @default(now())
+  customerName  String
+  customerEmail String
+  customerPhone String
+  city          String
+  address       String
+  postalCode    String?
+  isCorporate   Boolean     @default(false)
+  companyName   String?
+  taxNumber     String?
+  paymentMethod String
+  paymentStatus String      @default("pending")
+  orderStatus   String      @default("processing")
+  subtotal      Float
+  shipping      Float
+  vat           Float
+  discount      Float       @default(0)
+  total         Float
+  notes         String?
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id               String   @id @default(cuid())
+  orderId          String
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId        String
+  productName      String
+  productNameAr    String?
+  quantity         Int
+  unitPrice        Float
+  totalPrice       Float
+  selectedRam      String?
+  selectedStorage  String?
+  selectedWarranty String?
+}
+
+model Coupon {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  discountAmount Float
+  minSpend       Float    @default(0)
+  isActive       Boolean  @default(true)
+}
+
+model User {
+  id        String         @id @default(cuid())
+  name      String
+  email     String         @unique
+  phone     String
+  password  String?
+  role      String         @default("customer")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  addresses SavedAddress[]
+}
+
+model SavedAddress {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title          String
+  fullName       String
+  phone          String
+  city           String
+  addressDetails String
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
