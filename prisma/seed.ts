@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { SEED_CATEGORIES, SEED_PRODUCTS } from '../src/app/api/seed/route';
+import { SEED_CATEGORIES, SEED_PRODUCTS } from '../src/lib/seed-data';
 
 const prisma = new PrismaClient();
 
