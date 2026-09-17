@@ -16,7 +16,11 @@ import {
 } from 'lucide-react';
 import {
   InstaPayBadge,
-  VodafoneCashBadge
+  VodafoneCashBadge,
+  VisaBadge,
+  MastercardBadge,
+  MeezaBadge,
+  ValuBadge
 } from '@/components/ui/PaymentBadges';
 
 const TikTokIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
@@ -37,21 +41,24 @@ export const Footer: React.FC = () => {
   const enabledSocials = (socialLinks || []).filter(s => s.enabled);
 
   return (
-    <footer className="bg-[#003882] text-white pt-12 pb-6">
+    <footer
+      dir={isRtl ? 'rtl' : 'ltr'}
+      className="bg-[#003882] text-white pt-10 pb-8 sm:pt-14 sm:pb-10 relative z-20 text-start"
+    >
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6">
 
-        {/* Main Footer Grid - 4 Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-10">
+        {/* Main Footer Grid - Responsive 4 Columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 pb-10 border-b border-white/15">
 
           {/* Col 1: Brand Info & Socials */}
           <div className="space-y-4">
-            <div>
+            <div className="flex items-center rtl:justify-start ltr:justify-start">
               <Logo variant="white" size="md" />
             </div>
-            <p className="text-[13px] text-blue-100/90 leading-relaxed font-normal">
+            <p className="text-[13px] text-blue-100/90 leading-relaxed font-normal max-w-sm">
               {isRtl
-                ? 'شريكك التكنولوجي الموثوق في مصر. منتجات أصلية، ضمان رسمي ودعم فني متخصص يمكنك الاعتماد عليه.'
-                : 'Your trusted IT partner in Egypt. Genuine products, official warranty and expert support you can rely on.'}
+                ? 'شريكك التكنولوجي المعتمد في مصر. أجهزة لابتوب، كمبيوتر مكتبي، ومعدات شبكات أصلية 100% بضمان محلي ودعم فني متخصص.'
+                : 'Your trusted IT partner in Egypt. Genuine laptops, enterprise hardware, and networking solutions with official warranty and expert support.'}
             </p>
 
             {/* Social Media Icons (Controlled via Admin) */}
@@ -161,49 +168,69 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Col 2: Shop */}
+          {/* Col 2: Shop Categories */}
           <div className="space-y-3.5">
             <h4 className="text-white font-bold text-[15px] tracking-wide">
-              {isRtl ? 'المتجر' : 'Shop'}
+              {isRtl ? 'أقسام المتجر' : 'Shop Categories'}
             </h4>
             <ul className="space-y-2.5 text-[13px] text-blue-100/90 font-normal">
               <li>
-                <Link href="/products" className="hover:text-white transition-colors">
+                <Link href="/products" className="hover:text-white transition-colors inline-block">
                   {isRtl ? 'جميع المنتجات' : 'All Products'}
                 </Link>
               </li>
               <li>
-                <Link href="/deals" className="hover:text-white transition-colors">
-                  {isRtl ? 'عروض اليوم' : "Today's Deals"}
+                <Link href="/category/laptops" className="hover:text-white transition-colors inline-block">
+                  {isRtl ? 'أجهزة اللابتوب' : 'Laptops & Notebooks'}
                 </Link>
               </li>
               <li>
-                <Link href="/products?sort=best_sellers" className="hover:text-white transition-colors">
-                  {isRtl ? 'الأكثر مبيعاً' : 'Best Sellers'}
+                <Link href="/category/desktops" className="hover:text-white transition-colors inline-block">
+                  {isRtl ? 'الكمبيوتر المكتبي ومحطات العمل' : 'Desktops & Workstations'}
                 </Link>
               </li>
               <li>
-                <Link href="/products?sort=newest" className="hover:text-white transition-colors">
-                  {isRtl ? 'وصل حديثاً' : 'New Arrivals'}
+                <Link href="/category/network-device" className="hover:text-white transition-colors inline-block">
+                  {isRtl ? 'أجهزة وتجهيزات الشبكات' : 'Network Devices & Servers'}
                 </Link>
               </li>
               <li>
-                <Link href="/products" className="hover:text-white transition-colors">
-                  {isRtl ? 'تسوق حسب الماركة' : 'Shop by Brand'}
+                <Link href="/deals" className="hover:text-white transition-colors inline-block">
+                  {isRtl ? 'أقوى العروض والتخفيضات' : "Deals & Special Offers"}
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Col 3: About Us */}
+          {/* Col 3: Customer Care & Policies */}
           <div className="space-y-3.5">
             <h4 className="text-white font-bold text-[15px] tracking-wide">
-              {isRtl ? 'عن الشركة' : 'About Us'}
+              {isRtl ? 'خدمة العملاء والسياسات' : 'Customer Care & Policies'}
             </h4>
             <ul className="space-y-2.5 text-[13px] text-blue-100/90 font-normal">
               <li>
-                <Link href="/about" className="hover:text-white transition-colors">
+                <Link href="/about" className="hover:text-white transition-colors inline-block">
                   {isRtl ? 'عن HUB CLOUD' : 'About HUB CLOUD'}
+                </Link>
+              </li>
+              <li>
+                <Link href="/warranty" className="hover:text-white transition-colors inline-block">
+                  {isRtl ? 'سياسة الضمان المعتمد' : 'Warranty Policy'}
+                </Link>
+              </li>
+              <li>
+                <Link href="/shipping" className="hover:text-white transition-colors inline-block">
+                  {isRtl ? 'الشحن والتوصيل للمحافظات' : 'Shipping & Delivery'}
+                </Link>
+              </li>
+              <li>
+                <Link href="/returns" className="hover:text-white transition-colors inline-block">
+                  {isRtl ? 'سياسة الاستبدال والاسترجاع' : 'Returns & Refunds'}
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="hover:text-white transition-colors inline-block">
+                  {isRtl ? 'الأسئلة الأكثر شيوعاً' : 'Frequently Asked Questions'}
                 </Link>
               </li>
             </ul>
@@ -216,27 +243,35 @@ export const Footer: React.FC = () => {
             </h4>
             <div className="space-y-3 text-[13px] text-blue-100/90 font-normal">
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-white/90 flex-shrink-0 mt-0.5" />
-                <span>
+                <MapPin className="w-4 h-4 text-blue-300 flex-shrink-0 mt-1" />
+                <span className="leading-relaxed">
                   {isRtl
                     ? '181 شارع السودان - الدور التاسع - المهندسين، الجيزة، مصر'
                     : '181 Al Sudan St., 9th Floor, Mohandseen, Giza, Egypt'}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-white/90 flex-shrink-0" />
-                <a href="tel:+2001060777895" className="hover:text-white transition-colors font-mono" dir="ltr">
-                  +20 010 60 777 895
+                <Phone className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                <a
+                  href="tel:+2001060777895"
+                  className="hover:text-white transition-colors font-mono inline-block text-start"
+                  dir="ltr"
+                >
+                  <span dir="ltr" className="inline-block font-mono">010 60 777 895 (+20)</span>
                 </a>
               </div>
               <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-white/90 flex-shrink-0" />
-                <a href="mailto:sales@hubcloud.info" className="hover:text-white transition-colors font-mono">
-                  sales@hubcloud.info
+                <Mail className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                <a
+                  href="mailto:sales@hubcloud-eg.com"
+                  className="hover:text-white transition-colors font-mono inline-block text-start"
+                  dir="ltr"
+                >
+                  <span dir="ltr" className="inline-block font-mono">sales@hubcloud-eg.com</span>
                 </a>
               </div>
               <div className="flex items-center gap-3">
-                <Clock className="w-4 h-4 text-white/90 flex-shrink-0" />
+                <Clock className="w-4 h-4 text-blue-300 flex-shrink-0" />
                 <span>
                   {isRtl ? 'السبت - الخميس: 9:00 ص - 9:00 م' : 'Sat - Thu: 9:00 AM - 9:00 PM'}
                 </span>
@@ -247,18 +282,22 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Sub-bar */}
-        <div className="pt-6 border-t border-white/15 flex flex-col md:flex-row items-center justify-between gap-4 text-[12px] text-blue-100/80">
-          <p className="font-normal">
-            © 2025 HUB CLOUD IT Solutions. {isRtl ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.'}
+        <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[12px] text-blue-100/80">
+          <p className="font-normal text-center sm:text-start" dir="ltr">
+            © {new Date().getFullYear()} HUB CLOUD IT Solutions. {isRtl ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.'}
           </p>
 
-          <div className="flex items-center gap-3">
-            <span className="text-white/90 font-medium text-[13px]">
-              {isRtl ? 'نقبل الدفع عبر:' : 'We Accept:'}
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5">
+            <span className="text-white/90 font-medium text-[12px] shrink-0">
+              {isRtl ? 'طرق الدفع المعتمدة:' : 'Payment Methods:'}
             </span>
-            <div className="flex items-center gap-3">
-              <InstaPayBadge size="md" variant="transparent" />
-              <VodafoneCashBadge size="md" variant="transparent" />
+            <div className="flex flex-wrap items-center gap-1.5">
+              <VisaBadge size="sm" />
+              <MastercardBadge size="sm" />
+              <MeezaBadge size="sm" />
+              <ValuBadge size="sm" />
+              <InstaPayBadge size="sm" variant="white" />
+              <VodafoneCashBadge size="sm" variant="white" />
             </div>
           </div>
         </div>

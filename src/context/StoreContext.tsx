@@ -246,7 +246,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const savedLang = localStorage.getItem('hubcloud_lang') as 'en' | 'ar';
-      if (savedLang) setLanguageState(savedLang);
+      if (savedLang) {
+        setLanguageState(savedLang);
+        document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = savedLang;
+      }
 
       const savedUser = localStorage.getItem('hubcloud_user');
       let parsedUser: any = null;
