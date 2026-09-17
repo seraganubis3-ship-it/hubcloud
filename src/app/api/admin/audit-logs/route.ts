@@ -32,15 +32,17 @@ export async function GET(request: Request) {
     ]);
 
     const formatted = logs.map((log) => {
-      let parsedDetails: any = {};
-      try {
-        parsedDetails = JSON.parse(log.details || '{}');
-      } catch {
-        parsedDetails = { raw: log.details };
+      let parsedDetails: any = log.details;
+      if (typeof log.details === 'string') {
+        try {
+          parsedDetails = JSON.parse(log.details);
+        } catch {
+          parsedDetails = { raw: log.details };
+        }
       }
       return {
         ...log,
-        details: parsedDetails,
+        details: parsedDetails || {},
       };
     });
 

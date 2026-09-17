@@ -30,7 +30,7 @@ export async function requireAdmin(request: Request): Promise<AuthResult> {
   const auth = await requireSession(request);
   if (!auth.authorized) return auth;
 
-  if (auth.user.role !== 'admin' && !auth.user.email.includes('admin')) {
+  if (auth.user.role !== 'admin') {
     return {
       authorized: false,
       response: NextResponse.json(

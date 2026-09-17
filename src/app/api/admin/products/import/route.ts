@@ -159,7 +159,7 @@ export async function POST(request: Request) {
             quantityDelta: item.stockCount,
             previousStock: 0,
             newStock: item.stockCount,
-            reason: 'Initial stock via CSV import',
+            reason: 'restock',
             createdById: auth.user.id,
             createdByName: auth.user.name,
           },
@@ -177,8 +177,8 @@ export async function POST(request: Request) {
         userEmail: auth.user.email,
         action: 'PRODUCT_IMPORT',
         entityType: 'Product',
-        entityId: `batch-${importedCount}`,
-        details: JSON.stringify({ importedCount, totalRows: rows.length }),
+        entityId: 'bulk-csv',
+        details: { importedCount, totalRows: rows.length },
       },
     });
 

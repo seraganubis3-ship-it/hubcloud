@@ -359,12 +359,10 @@ async function runFullAdminTestSuite() {
     await prisma.auditLog.deleteMany({
       where: {
         OR: [
-          { details: { contains: 'TEST-PROD' } },
-          { details: { contains: 'psu_wattage' } },
-          { details: { contains: testCatSlug } }
+          { action: { in: ['PRODUCT_CREATE', 'PRODUCT_UPDATE', 'CATEGORY_CREATE', 'CATEGORY_DELETE'] } }
         ]
       }
-    });
+    }).catch(() => {});
   }
 
   // -----------------------------------------------------------------

@@ -7,6 +7,7 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { useStore } from '@/context/StoreContext';
 import { CategoryFiltersData } from '@/lib/category-filters';
 import { generateBreadcrumbJsonLd } from '@/lib/seo';
+import { CategoryBanner } from '@/components/category/CategoryBanner';
 import {
   ChevronRight,
   ChevronDown,
@@ -314,44 +315,15 @@ export default function CategoryClientView({
           <span className="font-bold text-gray-900">{title}</span>
         </div>
 
-        {/* Category Hero Header */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-hub-blue border border-blue-100 flex items-center justify-center shrink-0">
-                <CategoryIcon className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-                    {title}
-                  </h1>
-                </div>
-                <div className="flex items-center gap-2 text-[12px] text-slate-500 mt-1">
-                  <span className="font-semibold text-hub-blue">
-                    {categoryProducts.length} {isRtl ? 'منتج' : 'Items'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Link to all categories */}
-            <div className="flex items-center gap-2">
-              <Link
-                href="/products"
-                className="px-3.5 py-2 rounded-xl border border-slate-200 text-[12px] font-bold text-slate-700 hover:border-hub-blue hover:text-hub-blue whitespace-nowrap transition-colors"
-              >
-                {isRtl ? '← تصفح كل الأقسام' : '← View All Categories'}
-              </Link>
-            </div>
-          </div>
-
-          {category.description && (
-            <p className="text-[13px] text-slate-600 leading-relaxed pt-2 border-t border-slate-100">
-              {isRtl ? category.descriptionAr || category.description : category.description}
-            </p>
-          )}
-        </div>
+        {/* Category Hero Banner */}
+        <CategoryBanner
+          slug={slug}
+          categoryName={category.name}
+          categoryNameAr={category.nameAr}
+          itemCount={categoryProducts.length}
+          description={category.description}
+          descriptionAr={category.descriptionAr}
+        />
 
         {/* Catalog Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

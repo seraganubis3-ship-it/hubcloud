@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
 import { adminProductsCache } from '@/lib/server-cache';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
+import { serializeProduct } from '@/lib/product-helpers';
+import { Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
   const auth = await requireAdmin(request);
@@ -11,7 +13,7 @@ export async function GET(request: Request) {
   const cacheKey = request.url;
   const cached = adminProductsCache.get(cacheKey);
   if (cached) {
-    return NextResponse.json(cached, {
+    return apiSuccess(cached, 200, {
       headers: { 'Cache-Control': 'private, s-maxage=30' },
     });
   }
@@ -69,10 +71,10 @@ export async function GET(request: Request) {
         where,
         include: {
           category: {
-            select: { name: true, nameAr: true, slug: true },
+            select: { id: true, name: true, nameAr: true, slug: true },
           },
           variants: {
-            select: { id: true, sku: true, price: true, stockCount: true, status: true },
+            select: { id: true, sku: true, price: true, stockCount: true, status: true, options: true },
           },
           _count: {
             select: { attributeValues: true },
@@ -85,41 +87,31 @@ export async function GET(request: Request) {
     ]);
 
     const formattedProducts = products.map((p) => {
-      let parsedImages = [];
-      let parsedSpecs = {};
-      try {
-        parsedImages = JSON.parse(p.images || '[]');
-        parsedSpecs = JSON.parse(p.specs || '{}');
-      } catch {}
-
+      const serialized = serializeProduct(p);
       return {
-        ...p,
-        images: parsedImages,
-        specs: parsedSpecs,
+        ...serialized,
         variantCount: p.variants.length,
         categoryName: p.category.name,
-        categoryNameAr: p.category.nameAr,
       };
     });
 
     const result = {
-      success: true,
       products: formattedProducts,
       pagination: {
+        total,
         page,
         limit,
-        total,
         totalPages: Math.ceil(total / limit),
       },
     };
 
     adminProductsCache.set(cacheKey, result);
 
-    return NextResponse.json(result, {
+    return apiSuccess(result, 200, {
       headers: { 'Cache-Control': 'private, s-maxage=30' },
     });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -132,10 +124,7 @@ export async function POST(request: Request) {
 
     // Validation
     if (!body.name || !body.sku || !body.categoryId || body.price === undefined) {
-      return NextResponse.json(
-        { success: false, error: 'Product name, SKU, category, and price are required.' },
-        { status: 400 }
-      );
+      return apiError('Product name, SKU, category, and price are required.', 400);
     }
 
     // Check SKU uniqueness
@@ -145,13 +134,10 @@ export async function POST(request: Request) {
     });
 
     if (existing) {
-      return NextResponse.json(
-        { success: false, error: `SKU '${cleanSku}' already exists. Please choose a unique SKU.` },
-        { status: 409 }
-      );
+      return apiError(`SKU '${cleanSku}' already exists. Please choose a unique SKU.`, 409);
     }
 
-    // Ensure Category exists
+    // Ensure Category exists (lookup by id or slug)
     const category = await prisma.category.findFirst({
       where: {
         OR: [{ slug: body.categoryId }, { id: body.categoryId }],
@@ -159,15 +145,20 @@ export async function POST(request: Request) {
     });
 
     if (!category) {
-      return NextResponse.json({ success: false, error: 'Selected category does not exist.' }, { status: 400 });
+      return apiError('Selected category does not exist.', 400);
     }
 
     const productId = body.id || 'prod-' + Date.now();
     const stockCount = Math.max(0, Number(body.stockCount) || 0);
+    const priceNum = Number(body.price);
+    const oldPriceNum = body.oldPrice ? Number(body.oldPrice) : null;
+    const costPriceNum = body.costPrice ? Number(body.costPrice) : null;
+    const comparePriceNum = body.compareAtPrice ? Number(body.compareAtPrice) : null;
 
-    // Prepare specs JSON
-    const specsObj = body.specs || {};
-    const specsArObj = body.specsAr || {};
+    const discountPercentage =
+      oldPriceNum && oldPriceNum > priceNum
+        ? Math.round(((oldPriceNum - priceNum) / oldPriceNum) * 100)
+        : null;
 
     const created = await prisma.product.create({
       data: {
@@ -175,17 +166,14 @@ export async function POST(request: Request) {
         name: body.name.trim(),
         nameAr: body.nameAr?.trim() || body.name.trim(),
         brand: body.brand?.trim() || 'General',
-        categoryId: category.slug,
+        categoryId: category.id,
         sku: cleanSku,
         barcode: body.barcode?.trim() || null,
-        price: Number(body.price),
-        oldPrice: body.oldPrice ? Number(body.oldPrice) : null,
-        costPrice: body.costPrice ? Number(body.costPrice) : null,
-        compareAtPrice: body.compareAtPrice ? Number(body.compareAtPrice) : null,
-        discountPercentage:
-          body.oldPrice && body.oldPrice > body.price
-            ? Math.round(((body.oldPrice - body.price) / body.oldPrice) * 100)
-            : null,
+        price: new Prisma.Decimal(priceNum),
+        oldPrice: oldPriceNum ? new Prisma.Decimal(oldPriceNum) : null,
+        costPrice: costPriceNum ? new Prisma.Decimal(costPriceNum) : null,
+        compareAtPrice: comparePriceNum ? new Prisma.Decimal(comparePriceNum) : null,
+        discountPercentage,
         inStock: stockCount > 0,
         stockCount,
         lowStockThreshold: Number(body.lowStockThreshold) || 5,
@@ -199,50 +187,40 @@ export async function POST(request: Request) {
         status: body.status || 'active',
         weight: body.weight ? Number(body.weight) : null,
         thumbnail: body.thumbnail || '/images/products/placeholder.jpg',
-        images: Array.isArray(body.images) ? JSON.stringify(body.images) : body.images || '[]',
+        images: Array.isArray(body.images) ? body.images : [body.thumbnail || '/images/products/placeholder.jpg'],
         description: body.description || 'Enterprise grade IT hardware.',
         descriptionAr: body.descriptionAr || 'عتاد تقني معتمد للمؤسسات والأفراد.',
-        specs: typeof specsObj === 'string' ? specsObj : JSON.stringify(specsObj),
-        specsAr: typeof specsArObj === 'string' ? specsArObj : JSON.stringify(specsArObj),
-        features: Array.isArray(body.features) ? JSON.stringify(body.features) : null,
-        featuresAr: Array.isArray(body.featuresAr) ? JSON.stringify(body.featuresAr) : null,
+        specs: typeof body.specs === 'object' && body.specs !== null ? body.specs : {},
+        specsAr: typeof body.specsAr === 'object' && body.specsAr !== null ? body.specsAr : null,
+        features: Array.isArray(body.features) ? body.features : null,
+        featuresAr: Array.isArray(body.featuresAr) ? body.featuresAr : null,
         seoTitle: body.seoTitle || null,
         metaDescription: body.metaDescription || null,
         searchKeywords: body.searchKeywords || null,
+      },
+      include: {
+        category: true,
+        variants: true,
       },
     });
 
     // 1. Save Dynamic Attribute Values (if provided in body.attributeValues)
     if (body.attributeValues && typeof body.attributeValues === 'object') {
-      if (Array.isArray(body.attributeValues)) {
-        for (const item of body.attributeValues) {
-          const attrId = item?.attributeId;
-          const val = item?.textValue ?? item?.value;
-          if (!attrId || val === null || val === undefined || val === '') continue;
+      const entries: [string, any][] = Array.isArray(body.attributeValues)
+        ? body.attributeValues.map((item: any) => [item?.attributeId, item?.textValue ?? item?.value])
+        : Object.entries(body.attributeValues);
 
-          await prisma.productAttributeValue.create({
-            data: {
-              productId: created.id,
-              attributeId: attrId,
-              textValue: String(val),
-            },
-          }).catch(() => {});
-        }
-      } else {
-        for (const [attrId, val] of Object.entries(body.attributeValues)) {
-          if (val === null || val === undefined || val === '') continue;
-
-          await prisma.productAttributeValue.create({
-            data: {
-              productId: created.id,
-              attributeId: attrId,
-              textValue: String(val),
-            },
-          }).catch(() => {});
-        }
+      for (const [attrId, val] of entries) {
+        if (!attrId || val === null || val === undefined || val === '') continue;
+        await prisma.productAttributeValue.create({
+          data: {
+            productId: created.id,
+            attributeId: attrId,
+            textValue: String(val),
+          },
+        }).catch(() => {});
       }
     }
-
 
     // 2. Save Variants (if provided in body.variants)
     if (Array.isArray(body.variants) && body.variants.length > 0) {
@@ -252,12 +230,12 @@ export async function POST(request: Request) {
           data: {
             productId: created.id,
             sku: v.sku.trim().toUpperCase(),
-            price: Number(v.price),
-            oldPrice: v.oldPrice ? Number(v.oldPrice) : null,
-            costPrice: v.costPrice ? Number(v.costPrice) : null,
+            price: new Prisma.Decimal(Number(v.price)),
+            oldPrice: v.oldPrice ? new Prisma.Decimal(Number(v.oldPrice)) : null,
+            costPrice: v.costPrice ? new Prisma.Decimal(Number(v.costPrice)) : null,
             stockCount: Number(v.stockCount) || 0,
             image: v.image || null,
-            options: JSON.stringify(v.options || {}),
+            options: typeof v.options === 'object' && v.options !== null ? v.options : {},
             status: v.status || 'active',
           },
         }).catch(() => {});
@@ -272,7 +250,7 @@ export async function POST(request: Request) {
           quantityDelta: stockCount,
           previousStock: 0,
           newStock: stockCount,
-          reason: 'Initial stock on product creation',
+          reason: 'restock',
           createdById: auth.user.id,
           createdByName: auth.user.name,
         },
@@ -288,14 +266,14 @@ export async function POST(request: Request) {
         action: 'PRODUCT_CREATE',
         entityType: 'Product',
         entityId: created.id,
-        details: JSON.stringify({ name: created.name, sku: created.sku, price: created.price, stock: stockCount }),
+        details: { name: created.name, sku: created.sku, price: priceNum, stock: stockCount },
       },
     });
 
     adminProductsCache.clear();
 
-    return NextResponse.json({ success: true, product: created }, { status: 201 });
+    return apiSuccess({ product: serializeProduct(created) }, 201);
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }

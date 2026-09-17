@@ -67,7 +67,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
     return (
       <div className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-500/80 hover:shadow-md transition-all duration-300 p-4 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 group">
         {/* Thumbnail & Badges */}
-        <div className="relative w-full sm:w-52 h-52 flex-shrink-0 bg-white rounded-xl overflow-hidden flex items-center justify-center p-3">
+        <div className="relative w-full sm:w-52 h-52 flex-shrink-0 bg-slate-50/60 border border-slate-100 rounded-xl overflow-hidden flex items-center justify-center p-4">
           {product.discountPercentage && (
             <span className="absolute top-2.5 left-2.5 rtl:left-auto rtl:right-2.5 bg-hub-red text-white text-[11px] font-black px-2 py-0.5 rounded-md shadow-xs z-10">
               -{product.discountPercentage}%
@@ -83,7 +83,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
               src={product.thumbnail || product.images[0]}
               alt={title}
               fill
-              className="object-contain p-3 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+              className="object-contain p-2 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
             />
           </Link>
         </div>
@@ -197,8 +197,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
   // Grid View
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-500/80 hover:shadow-lg transition-all duration-300 p-2.5 sm:p-4 flex flex-col justify-between group relative">
-      {/* Product Image Area */}
-      <div className="relative w-full aspect-square bg-white rounded-xl overflow-hidden flex items-center justify-center mb-2.5 sm:mb-3">
+      {/* Product Image Area - Fixed 1:1 Aspect Ratio with Consistent Framing */}
+      <div className="relative w-full aspect-square bg-slate-50/60 rounded-xl border border-slate-100/80 overflow-hidden flex items-center justify-center mb-2.5 sm:mb-3 p-3 sm:p-4">
         {/* Discount Badge */}
         {product.discountPercentage && (
           <span className="absolute top-2 left-2 rtl:left-auto rtl:right-2 bg-hub-red text-white text-[10px] sm:text-[11px] font-black px-1.5 sm:px-2 py-0.5 rounded-md shadow-xs z-10">
@@ -267,7 +267,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
             alt={title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw"
-            className="object-contain p-3 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+            className="object-contain p-1.5 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
           />
         </Link>
       </div>

@@ -59,14 +59,17 @@ export async function POST(request: Request) {
     }
 
     const numSubtotal = Number(subtotal);
-    if (!isNaN(numSubtotal) && numSubtotal > 0 && coupon.minSpend && coupon.minSpend > 0) {
-      if (numSubtotal < coupon.minSpend) {
+    const minSpend = Number(coupon.minSpend || 0);
+    const discountAmount = Number(coupon.discountAmount || 0);
+
+    if (!isNaN(numSubtotal) && numSubtotal > 0 && minSpend > 0) {
+      if (numSubtotal < minSpend) {
         return NextResponse.json(
           {
             success: false,
             valid: false,
-            message: `Coupon requires a minimum order spend of EGP ${coupon.minSpend.toLocaleString('en-US')}`,
-            minSpend: coupon.minSpend,
+            message: `Coupon requires a minimum order spend of EGP ${minSpend.toLocaleString('en-US')}`,
+            minSpend,
           },
           { status: 400 }
         );
@@ -77,8 +80,8 @@ export async function POST(request: Request) {
       success: true,
       valid: true,
       code: coupon.code,
-      discountAmount: coupon.discountAmount,
-      minSpend: coupon.minSpend,
+      discountAmount,
+      minSpend,
     });
   } catch (error: any) {
     console.error('Error validating coupon:', error);

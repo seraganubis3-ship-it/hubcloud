@@ -36,9 +36,13 @@ export async function GET(request: Request) {
 
     const formatted = attributes.map((a) => {
       let parsedOptions: string[] = [];
-      try {
-        parsedOptions = a.options ? JSON.parse(a.options) : [];
-      } catch {}
+      if (Array.isArray(a.options)) {
+        parsedOptions = a.options as string[];
+      } else if (typeof a.options === 'string') {
+        try {
+          parsedOptions = JSON.parse(a.options);
+        } catch {}
+      }
 
       return {
         ...a,

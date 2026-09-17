@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
 import { adminProductsCache, categoryFiltersCache } from '@/lib/server-cache';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
+import { serializeProduct } from '@/lib/product-helpers';
+import { Prisma } from '@prisma/client';
 
 export async function GET(
   request: Request,
@@ -33,38 +35,12 @@ export async function GET(
     });
 
     if (!product) {
-      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+      return apiError('Product not found', 404);
     }
 
-    let parsedImages = [];
-    let parsedSpecs = {};
-    let parsedFeatures = [];
-    try {
-      parsedImages = JSON.parse(product.images || '[]');
-      parsedSpecs = JSON.parse(product.specs || '{}');
-      parsedFeatures = JSON.parse(product.features || '[]');
-    } catch {}
-
-    const formattedVariants = product.variants.map((v) => {
-      let optionsObj = {};
-      try {
-        optionsObj = JSON.parse(v.options || '{}');
-      } catch {}
-      return { ...v, options: optionsObj };
-    });
-
-    return NextResponse.json({
-      success: true,
-      product: {
-        ...product,
-        images: parsedImages,
-        specs: parsedSpecs,
-        features: parsedFeatures,
-        variants: formattedVariants,
-      },
-    });
+    return apiSuccess({ product: serializeProduct(product) });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -84,17 +60,31 @@ export async function PUT(
     });
 
     if (!existing) {
-      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+      return apiError('Product not found', 404);
+    }
+
+    let targetCategoryId = existing.categoryId;
+    if (body.categoryId !== undefined) {
+      const cat = await prisma.category.findFirst({
+        where: {
+          OR: [{ id: body.categoryId }, { slug: body.categoryId }],
+        },
+      });
+      if (cat) {
+        targetCategoryId = cat.id;
+      }
     }
 
     const previousStock = existing.stockCount;
     const newStock = body.stockCount !== undefined ? Number(body.stockCount) : previousStock;
 
     // Price and discount calculation
-    const price = body.price !== undefined ? Number(body.price) : existing.price;
-    const oldPrice = body.oldPrice !== undefined ? (body.oldPrice ? Number(body.oldPrice) : null) : existing.oldPrice;
+    const priceNum = body.price !== undefined ? Number(body.price) : Number(existing.price);
+    const oldPriceNum = body.oldPrice !== undefined
+      ? (body.oldPrice ? Number(body.oldPrice) : null)
+      : (existing.oldPrice ? Number(existing.oldPrice) : null);
     const discountPercentage =
-      oldPrice && oldPrice > price ? Math.round(((oldPrice - price) / oldPrice) * 100) : null;
+      oldPriceNum && oldPriceNum > priceNum ? Math.round(((oldPriceNum - priceNum) / oldPriceNum) * 100) : null;
 
     const updated = await prisma.product.update({
       where: { id },
@@ -102,13 +92,13 @@ export async function PUT(
         name: body.name !== undefined ? body.name.trim() : undefined,
         nameAr: body.nameAr !== undefined ? body.nameAr.trim() : undefined,
         brand: body.brand !== undefined ? body.brand.trim() : undefined,
-        categoryId: body.categoryId !== undefined ? body.categoryId : undefined,
+        categoryId: targetCategoryId,
         sku: body.sku !== undefined ? body.sku.trim().toUpperCase() : undefined,
         barcode: body.barcode !== undefined ? body.barcode : undefined,
-        price,
-        oldPrice,
-        costPrice: body.costPrice !== undefined ? (body.costPrice ? Number(body.costPrice) : null) : undefined,
-        compareAtPrice: body.compareAtPrice !== undefined ? (body.compareAtPrice ? Number(body.compareAtPrice) : null) : undefined,
+        price: body.price !== undefined ? new Prisma.Decimal(priceNum) : undefined,
+        oldPrice: body.oldPrice !== undefined ? (oldPriceNum ? new Prisma.Decimal(oldPriceNum) : null) : undefined,
+        costPrice: body.costPrice !== undefined ? (body.costPrice ? new Prisma.Decimal(Number(body.costPrice)) : null) : undefined,
+        compareAtPrice: body.compareAtPrice !== undefined ? (body.compareAtPrice ? new Prisma.Decimal(Number(body.compareAtPrice)) : null) : undefined,
         discountPercentage,
         inStock: newStock > 0,
         stockCount: newStock,
@@ -125,33 +115,33 @@ export async function PUT(
         thumbnail: body.thumbnail !== undefined ? body.thumbnail : undefined,
         images:
           body.images !== undefined
-            ? Array.isArray(body.images)
-              ? JSON.stringify(body.images)
-              : body.images
+            ? Array.isArray(body.images) ? body.images : [body.thumbnail || '/images/products/placeholder.jpg']
             : undefined,
         description: body.description !== undefined ? body.description : undefined,
         descriptionAr: body.descriptionAr !== undefined ? body.descriptionAr : undefined,
         specs:
           body.specs !== undefined
-            ? typeof body.specs === 'string'
-              ? body.specs
-              : JSON.stringify(body.specs)
+            ? typeof body.specs === 'object' && body.specs !== null ? body.specs : {}
             : undefined,
         specsAr:
           body.specsAr !== undefined
-            ? typeof body.specsAr === 'string'
-              ? body.specsAr
-              : JSON.stringify(body.specsAr)
+            ? typeof body.specsAr === 'object' && body.specsAr !== null ? body.specsAr : null
             : undefined,
         features:
           body.features !== undefined
-            ? Array.isArray(body.features)
-              ? JSON.stringify(body.features)
-              : body.features
+            ? Array.isArray(body.features) ? body.features : null
+            : undefined,
+        featuresAr:
+          body.featuresAr !== undefined
+            ? Array.isArray(body.featuresAr) ? body.featuresAr : null
             : undefined,
         seoTitle: body.seoTitle !== undefined ? body.seoTitle : undefined,
         metaDescription: body.metaDescription !== undefined ? body.metaDescription : undefined,
         searchKeywords: body.searchKeywords !== undefined ? body.searchKeywords : undefined,
+      },
+      include: {
+        category: true,
+        variants: true,
       },
     });
 
@@ -163,7 +153,7 @@ export async function PUT(
           quantityDelta: newStock - previousStock,
           previousStock,
           newStock,
-          reason: body.stockAdjustmentReason || 'Stock manual update via Admin',
+          reason: 'adjustment',
           createdById: auth.user.id,
           createdByName: auth.user.name,
         },
@@ -194,23 +184,26 @@ export async function PUT(
       }
     }
 
-
     // 3. Sync Variants if passed
     if (Array.isArray(body.variants)) {
-      // Upsert or create variants
       for (const v of body.variants) {
         if (!v.sku || !v.price) continue;
+        const vPrice = new Prisma.Decimal(Number(v.price));
+        const vOldPrice = v.oldPrice ? new Prisma.Decimal(Number(v.oldPrice)) : null;
+        const vCostPrice = v.costPrice ? new Prisma.Decimal(Number(v.costPrice)) : null;
+        const vOpts = typeof v.options === 'object' && v.options !== null ? v.options : {};
+
         if (v.id) {
           await prisma.productVariant.update({
             where: { id: v.id },
             data: {
               sku: v.sku.trim().toUpperCase(),
-              price: Number(v.price),
-              oldPrice: v.oldPrice ? Number(v.oldPrice) : null,
-              costPrice: v.costPrice ? Number(v.costPrice) : null,
+              price: vPrice,
+              oldPrice: vOldPrice,
+              costPrice: vCostPrice,
               stockCount: Number(v.stockCount) || 0,
               image: v.image || null,
-              options: JSON.stringify(v.options || {}),
+              options: vOpts,
               status: v.status || 'active',
             },
           }).catch(() => {});
@@ -219,12 +212,12 @@ export async function PUT(
             data: {
               productId: id,
               sku: v.sku.trim().toUpperCase(),
-              price: Number(v.price),
-              oldPrice: v.oldPrice ? Number(v.oldPrice) : null,
-              costPrice: v.costPrice ? Number(v.costPrice) : null,
+              price: vPrice,
+              oldPrice: vOldPrice,
+              costPrice: vCostPrice,
               stockCount: Number(v.stockCount) || 0,
               image: v.image || null,
-              options: JSON.stringify(v.options || {}),
+              options: vOpts,
               status: v.status || 'active',
             },
           }).catch(() => {});
@@ -241,19 +234,19 @@ export async function PUT(
         action: 'PRODUCT_UPDATE',
         entityType: 'Product',
         entityId: updated.id,
-        details: JSON.stringify({
+        details: {
           updatedFields: Object.keys(body),
           priceChange: previousStock !== newStock ? { oldStock: previousStock, newStock } : null,
-        }),
+        },
       },
     });
 
     adminProductsCache.clear();
     categoryFiltersCache.delete(updated.categoryId.toLowerCase());
 
-    return NextResponse.json({ success: true, product: updated });
+    return apiSuccess({ product: serializeProduct(updated) });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -274,7 +267,7 @@ export async function DELETE(
     });
 
     if (!existing) {
-      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+      return apiError('Product not found', 404);
     }
 
     // If soft delete (default)
@@ -295,14 +288,14 @@ export async function DELETE(
           action: 'PRODUCT_ARCHIVE',
           entityType: 'Product',
           entityId: id,
-          details: JSON.stringify({ name: existing.name, sku: existing.sku }),
+          details: { name: existing.name, sku: existing.sku },
         },
       });
 
       adminProductsCache.clear();
       categoryFiltersCache.delete(existing.categoryId.toLowerCase());
 
-      return NextResponse.json({ success: true, message: `Product ${existing.name} has been safely archived.` });
+      return apiSuccess({ message: `Product ${existing.name} has been safely archived.` });
     }
 
     // Hard delete
@@ -318,15 +311,15 @@ export async function DELETE(
         action: 'PRODUCT_DELETE',
         entityType: 'Product',
         entityId: id,
-        details: JSON.stringify({ name: existing.name, sku: existing.sku }),
+        details: { name: existing.name, sku: existing.sku },
       },
     });
 
     adminProductsCache.clear();
     categoryFiltersCache.delete(existing.categoryId.toLowerCase());
 
-    return NextResponse.json({ success: true, message: `Product ${existing.name} deleted completely.` });
+    return apiSuccess({ message: `Product ${existing.name} deleted completely.` });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }

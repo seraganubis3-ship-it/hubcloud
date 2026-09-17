@@ -1,6 +1,16 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
+import { InventoryReason } from '@prisma/client';
+
+const VALID_REASONS: InventoryReason[] = [
+  'order_created',
+  'order_cancelled',
+  'restock',
+  'damage',
+  'adjustment',
+  'return_restock',
+];
 
 export async function POST(request: Request) {
   const auth = await requireAdmin(request);
@@ -11,91 +21,117 @@ export async function POST(request: Request) {
     const { productId, variantId, quantityDelta, reason } = body;
 
     if (!productId || quantityDelta === undefined || !reason) {
-      return NextResponse.json(
-        { success: false, error: 'productId, quantityDelta, and reason are required.' },
-        { status: 400 }
-      );
+      return apiError('productId, quantityDelta, and reason are required.', 400);
     }
 
     const delta = Number(quantityDelta);
     if (isNaN(delta) || delta === 0) {
-      return NextResponse.json({ success: false, error: 'quantityDelta must be a non-zero number.' }, { status: 400 });
+      return apiError('quantityDelta must be a non-zero number.', 400);
     }
 
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
+    let normalizedReason = reason.trim() as InventoryReason;
+    if ((normalizedReason as any) === 'manual_adjustment') normalizedReason = 'adjustment';
+    if ((normalizedReason as any) === 'return') normalizedReason = 'return_restock';
 
-    if (!product) {
-      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+    if (!VALID_REASONS.includes(normalizedReason)) {
+      return apiError(`Invalid reason. Must be one of: ${VALID_REASONS.join(', ')}`, 400);
     }
 
-    const previousStock = product.stockCount;
-    const newStock = Math.max(0, previousStock + delta);
+    // Execute atomically in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
+        where: { id: productId },
+      });
 
-    // Update Product stock
-    const updatedProduct = await prisma.product.update({
-      where: { id: productId },
-      data: {
-        stockCount: newStock,
-        inStock: newStock > 0,
-      },
-    });
+      if (!product) {
+        throw new Error('Product not found');
+      }
 
-    // If variantId passed, also update variant stock
-    if (variantId) {
-      const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
-      if (variant) {
-        await prisma.productVariant.update({
+      let variant = null;
+      let previousStock = product.stockCount;
+      let newStock = Math.max(0, previousStock + delta);
+
+      if (variantId) {
+        variant = await tx.productVariant.findUnique({ where: { id: variantId } });
+        if (!variant) {
+          throw new Error('Product variant not found');
+        }
+        previousStock = variant.stockCount;
+        newStock = Math.max(0, previousStock + delta);
+
+        await tx.productVariant.update({
           where: { id: variantId },
+          data: { stockCount: newStock },
+        });
+
+        // Recalculate parent product total stock from all variants
+        const allVariants = await tx.productVariant.findMany({
+          where: { productId },
+          select: { stockCount: true },
+        });
+        const totalVariantStock = allVariants.reduce((sum, v) => sum + v.stockCount, 0);
+
+        await tx.product.update({
+          where: { id: productId },
           data: {
-            stockCount: Math.max(0, variant.stockCount + delta),
+            stockCount: totalVariantStock,
+            inStock: totalVariantStock > 0,
+          },
+        });
+      } else {
+        await tx.product.update({
+          where: { id: productId },
+          data: {
+            stockCount: newStock,
+            inStock: newStock > 0,
           },
         });
       }
-    }
 
-    // Record Inventory Transaction
-    const transaction = await prisma.inventoryTransaction.create({
-      data: {
-        productId,
-        variantId: variantId || null,
-        quantityDelta: delta,
-        previousStock,
-        newStock,
-        reason: reason.trim(),
-        createdById: auth.user.id,
-        createdByName: auth.user.name,
-      },
-    });
-
-    // Record Audit Log
-    await prisma.auditLog.create({
-      data: {
-        userId: auth.user.id,
-        userName: auth.user.name,
-        userEmail: auth.user.email,
-        action: 'STOCK_ADJUST',
-        entityType: 'Inventory',
-        entityId: productId,
-        details: JSON.stringify({
-          sku: product.sku,
-          name: product.name,
-          delta,
+      const transaction = await tx.inventoryTransaction.create({
+        data: {
+          productId,
+          variantId: variantId || null,
+          quantityDelta: delta,
           previousStock,
           newStock,
-          reason,
-        }),
-      },
+          reason: normalizedReason,
+          createdById: auth.user.id,
+          createdByName: auth.user.name,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: auth.user.id,
+          userName: auth.user.name,
+          userEmail: auth.user.email,
+          action: 'STOCK_ADJUST',
+          entityType: 'Inventory',
+          entityId: productId,
+          details: {
+            sku: product.sku,
+            name: product.name,
+            delta,
+            previousStock,
+            newStock,
+            reason: normalizedReason,
+            variantId: variantId || null,
+          },
+        },
+      });
+
+      return { transaction, newStock };
     });
 
-    return NextResponse.json({
-      success: true,
-      message: `Stock adjusted by ${delta > 0 ? '+' + delta : delta}. New stock: ${newStock}`,
-      product: updatedProduct,
-      transaction,
+    return apiSuccess({
+      message: `Stock adjusted by ${delta > 0 ? '+' + delta : delta}. New stock: ${result.newStock}`,
+      transaction: result.transaction,
     });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    if (error.message === 'Product not found' || error.message === 'Product variant not found') {
+      return apiError(error.message, 404);
+    }
+    return handleApiError(error);
   }
 }

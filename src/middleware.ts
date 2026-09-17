@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
       session = await verifySessionToken(sessionCookie);
     }
 
-    const isAuthorizedAdmin = session && (session.role === 'admin' || session.email.includes('admin'));
+    const isAuthorizedAdmin = session && session.role === 'admin';
 
     if (!isAuthorizedAdmin) {
       if (pathname.startsWith('/api/')) {

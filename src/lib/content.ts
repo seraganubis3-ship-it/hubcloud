@@ -350,7 +350,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         question: 'Can I request a custom hardware quotation for my company?',
         questionAr: 'هل يمكنني طلب عرض أسعار مخصص لتجهيز شركة أو معمل؟',
         answer: 'Yes! Our enterprise engineering team offers custom project configuration for servers, networks, and bulk workstations with volume discounts.',
-        answerAr: 'نعم بالتأكيد! يمكنك التواصل معنا عبر صفحة اتصل بنا أو مراسلتنا على sales@hubcloud.info وسيقوم مهندس مبيعات الشركات بإعداد عرض سعر فني ومالي متكامل.',
+        answerAr: 'نعم بالتأكيد! يمكنك التواصل معنا مباشرة عبر واتساب المبيعات أو مراسلتنا على sales@hubcloud.info وسيقوم مهندس مبيعات الشركات بمساعدتك فوراً.',
       },
     ],
   },

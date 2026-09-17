@@ -62,23 +62,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   const product = dbProduct || products.find(p => p.id === id);
 
-  if (loading && !product) {
-    return <ProductDetailSkeleton />;
-  }
-
-  if (!product) {
-    return (
-      <div className="max-w-[1536px] mx-auto px-4 py-16 text-center">
-        <h2 className="text-xl font-bold text-gray-800 mb-2">
-          {isRtl ? 'المنتج غير موجود' : 'Product Not Found'}
-        </h2>
-        <Link href="/products" className="text-hub-blue hover:underline text-sm font-semibold">
-          {isRtl ? 'العودة للمنتجات' : 'Back to products'}
-        </Link>
-      </div>
-    );
-  }
-
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedRam, setSelectedRam] = useState('16GB');
   const [selectedStorage, setSelectedStorage] = useState('512GB SSD');
@@ -93,6 +76,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   // Dynamic Price
   const calculatedUnitPrice = useMemo(() => {
+    if (!product) return 0;
     let price = currentVariant ? currentVariant.price : product.price;
     const ramOpt = product.ramOptions?.find(r => r.label === selectedRam);
     if (ramOpt) price += ramOpt.priceDelta;
@@ -105,6 +89,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   // Grouped specifications by Attribute Group
   const groupedSpecs = useMemo(() => {
+    if (!product) return [];
     const groups: Record<
       string,
       {
@@ -175,11 +160,30 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     return Object.values(groups).sort((a, b) => a.displayOrder - b.displayOrder);
   }, [product, isRtl]);
 
+  if (loading && !product) {
+    return <ProductDetailSkeleton />;
+  }
+
+  if (!product) {
+    return (
+      <div className="max-w-[1536px] mx-auto px-4 py-16 text-center">
+        <h2 className="text-xl font-bold text-gray-800 mb-2">
+          {isRtl ? 'المنتج غير موجود' : 'Product Not Found'}
+        </h2>
+        <Link href="/products" className="text-hub-blue hover:underline text-sm font-semibold">
+          {isRtl ? 'العودة للمنتجات' : 'Back to products'}
+        </Link>
+      </div>
+    );
+  }
+
   const handleAddToCart = () => {
     addToCart(product, quantity, {
       ram: selectedRam,
       storage: selectedStorage,
       warranty: selectedWarranty,
+      variantId: currentVariant?.id,
+      selectedOptions: currentVariant?.options,
       unitPrice: calculatedUnitPrice
     });
   };
@@ -189,6 +193,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       ram: selectedRam,
       storage: selectedStorage,
       warranty: selectedWarranty,
+      variantId: currentVariant?.id,
+      selectedOptions: currentVariant?.options,
       unitPrice: calculatedUnitPrice
     });
     router.push('/checkout');

@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
-import { requireSession } from '@/lib/auth-guard';
+import { requireAdmin } from '@/lib/auth-guard';
 import { getSmtpConfig, saveSmtpConfig } from '@/lib/email-service';
 
 export async function GET(request: Request) {
-  const auth = await requireSession(request);
+  const auth = await requireAdmin(request);
   if (!auth.authorized) return auth.response;
-
-  if (auth.user.role !== 'admin' && !auth.user.email?.includes('admin')) {
-    return NextResponse.json({ success: false, error: 'غير مصرح بالوصول' }, { status: 403 });
-  }
 
   try {
     const config = getSmtpConfig();
@@ -26,12 +22,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireSession(request);
+  const auth = await requireAdmin(request);
   if (!auth.authorized) return auth.response;
-
-  if (auth.user.role !== 'admin' && !auth.user.email?.includes('admin')) {
-    return NextResponse.json({ success: false, error: 'غير مصرح بالوصول' }, { status: 403 });
-  }
 
   try {
     const body = await request.json();

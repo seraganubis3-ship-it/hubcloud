@@ -83,46 +83,46 @@ export default function CheckoutPage() {
 
     try {
       let serverOrderId: string | undefined;
-      try {
-        const res = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            phone: formData.phone,
-            city: formData.city,
-            address: formData.address,
-            postalCode: formData.postalCode,
-            paymentMethod: formData.paymentMethod,
-            paymentStatus: computedPaymentStatus,
-            notes: finalNotes,
-            subtotal,
-            shipping,
-            vat,
-            discount,
-            total,
-            items: cart.map(item => ({
-              productId: item.product.id,
-              productName: item.product.name,
-              productNameAr: item.product.nameAr,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice,
-              selectedRam: item.selectedRam,
-              selectedStorage: item.selectedStorage,
-              selectedWarranty: item.selectedWarranty,
-            }))
-          })
-        });
-        const data = await res.json();
-        if (data.success && data.order?.id) {
-          serverOrderId = data.order.id;
-        }
-      } catch (apiErr) {
-        console.warn('API sync warning:', apiErr);
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+          customerEmail: formData.email,
+          customerPhone: formData.phone,
+          city: formData.city,
+          address: formData.address,
+          postalCode: formData.postalCode,
+          paymentMethod: formData.paymentMethod,
+          paymentStatus: computedPaymentStatus,
+          notes: finalNotes,
+          subtotal,
+          shipping,
+          vat,
+          discount,
+          total,
+          items: cart.map(item => ({
+            productId: item.product.id,
+            variantId: item.selectedVariantId,
+            productName: item.product.name,
+            productNameAr: item.product.nameAr,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            selectedOptions: {
+              ...(item.selectedOptions || {}),
+              ...(item.selectedRam ? { ram: item.selectedRam } : {}),
+              ...(item.selectedStorage ? { storage: item.selectedStorage } : {}),
+              ...(item.selectedWarranty ? { warranty: item.selectedWarranty } : {}),
+            },
+          }))
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || (isRtl ? 'فشل تأكيد الطلب من الخادم' : 'Failed to place order.'));
       }
+      serverOrderId = data.order?.id;
 
       // Sync into StoreContext & LocalStorage
       const created = createOrder({
@@ -146,9 +146,9 @@ export default function CheckoutPage() {
       clearCart();
       showToast(isRtl ? 'تم تأكيد طلبك بنجاح!' : 'Order placed and saved successfully!', 'success');
       router.push(`/order-success/${created.id}`);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      showToast(isRtl ? 'حدث خطأ أثناء معالجة الطلب' : 'Error processing order', 'error');
+      showToast(err.message || (isRtl ? 'حدث خطأ أثناء معالجة الطلب' : 'Error processing order'), 'error');
     } finally {
       setIsSubmitting(false);
     }

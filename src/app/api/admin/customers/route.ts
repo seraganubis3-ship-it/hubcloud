@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         (o) => o.customerEmail.toLowerCase() === u.email.toLowerCase()
       );
       const ordersCount = userOrders.length;
-      const totalSpent = userOrders.reduce((sum, o) => sum + o.total, 0);
+      const totalSpent = userOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
       return {
         id: u.id,

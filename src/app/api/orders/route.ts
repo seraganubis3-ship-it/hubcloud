@@ -1,27 +1,54 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireSession } from '@/lib/auth-guard';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import { sanitizeString, sanitizeEmail, sanitizePhone } from '@/lib/sanitize';
 import { ordersCache, adminStatsCache } from '@/lib/server-cache';
 import { sendOrderConfirmationEmails } from '@/lib/email-service';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
+import { validateOrderInput } from '@/lib/validation';
+import { Prisma } from '@prisma/client';
+
+function serializeOrder(order: any) {
+  if (!order) return null;
+  return {
+    ...order,
+    subtotal: Number(order.subtotal ?? 0),
+    shipping: Number(order.shipping ?? 0),
+    vat: Number(order.vat ?? 0),
+    discount: Number(order.discount ?? 0),
+    total: Number(order.total ?? 0),
+    items: (order.items || []).map((item: any) => {
+      const opts = (typeof item.selectedOptions === 'object' && item.selectedOptions !== null)
+        ? item.selectedOptions
+        : {};
+
+      return {
+        ...item,
+        unitPrice: Number(item.unitPrice ?? 0),
+        totalPrice: Number(item.totalPrice ?? 0),
+        selectedRam: opts.ram || opts.selectedRam || undefined,
+        selectedStorage: opts.storage || opts.selectedStorage || undefined,
+        selectedWarranty: opts.warranty || opts.selectedWarranty || undefined,
+      };
+    }),
+  };
+}
 
 export async function GET(request: Request) {
-  // Requires authenticated session
   const auth = await requireSession(request);
   if (!auth.authorized) return auth.response;
 
-  const isAdmin = auth.user.role === 'admin' || auth.user.email?.includes('admin');
+  // Strict role check without email backdoor
+  const isAdmin = auth.user.role === 'admin';
   const cacheKey = isAdmin ? '__admin_all__' : auth.user.email.toLowerCase();
   const cached = ordersCache.get(cacheKey);
   if (cached) {
-    return NextResponse.json(cached, {
+    return apiSuccess(cached, 200, {
       headers: { 'Cache-Control': 'private, s-maxage=20' },
     });
   }
 
   try {
-    // Admins see all orders; regular authenticated customers see ONLY their own orders
     const whereClause = isAdmin
       ? {}
       : { customerEmail: { equals: auth.user.email, mode: 'insensitive' as const } };
@@ -34,14 +61,13 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const result = { success: true, count: orders.length, orders };
+    const serializedOrders = orders.map(serializeOrder);
+    const result = { count: serializedOrders.length, orders: serializedOrders };
     ordersCache.set(cacheKey, result);
 
-    return NextResponse.json(result, {
-      headers: { 'Cache-Control': 'private, s-maxage=20' },
-    });
+    return apiSuccess(result);
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -51,77 +77,210 @@ export async function POST(request: Request) {
     const ip = getClientIp(request);
     const rateCheck = checkRateLimit(ip, 'orders:create', 15, 3600);
     if (!rateCheck.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Too many order requests. Please wait ${rateCheck.resetSeconds} seconds before trying again.`,
-        },
-        { status: 429 }
+      return apiError(
+        `Too many order requests. Please wait ${rateCheck.resetSeconds} seconds before trying again.`,
+        429
       );
     }
 
-    const body = await request.json();
+    const rawBody = await request.json();
+    const validation = validateOrderInput(rawBody);
+    if (!validation.isValid || !validation.data) {
+      return apiError(validation.errors.join(' '), 400);
+    }
+
+    const data = validation.data;
     const orderId = 'HC-' + Math.floor(100000 + Math.random() * 900000);
 
-    const rawName = `${body.firstName || ''} ${body.lastName || ''}`.trim() || body.customerName || 'Customer';
-    const cleanName = sanitizeString(rawName, 80);
-    const cleanEmail = sanitizeEmail(body.email || body.customerEmail);
-    const cleanPhone = sanitizePhone(body.phone || body.customerPhone);
-    const cleanCity = sanitizeString(body.city || '', 50);
-    const cleanAddress = sanitizeString(body.address || '', 300);
-    const cleanNotes = body.notes ? sanitizeString(body.notes, 500) : null;
+    const cleanName = sanitizeString(data.customerName, 80);
+    const cleanEmail = sanitizeEmail(data.customerEmail);
+    const cleanPhone = sanitizePhone(data.customerPhone);
+    const cleanCity = sanitizeString(data.city, 50);
+    const cleanAddress = sanitizeString(data.address, 300);
+    const cleanNotes = data.notes ? sanitizeString(data.notes, 500) : null;
 
-    const order = await prisma.order.create({
-      data: {
-        id: orderId,
-        customerName: cleanName,
-        customerEmail: cleanEmail,
-        customerPhone: cleanPhone,
-        city: cleanCity,
-        address: cleanAddress,
-        postalCode: body.postalCode ? sanitizeString(body.postalCode, 20) : null,
-        isCorporate: body.isCorporate ?? false,
-        companyName: body.companyName ? sanitizeString(body.companyName, 100) : null,
-        taxNumber: body.taxNumber ? sanitizeString(body.taxNumber, 50) : null,
-        paymentMethod: body.paymentMethod || 'instapay',
-        paymentStatus: body.paymentStatus || (body.paymentMethod === 'cod' ? 'cash_on_delivery' : 'pending'),
-        orderStatus: 'processing',
-        subtotal: Number(body.subtotal) || 0,
-        shipping: Number(body.shipping) || 0,
-        vat: Number(body.vat) || 0,
-        discount: Number(body.discount) || 0,
-        total: Number(body.total) || 0,
-        notes: cleanNotes,
-        items: {
-          create: (body.items || []).map((item: any) => ({
-            productId: item.product?.id || item.productId || 'custom',
-            productName: sanitizeString(item.product?.name || item.productName || 'Product Item', 120),
-            productNameAr: item.product?.nameAr || item.productNameAr ? sanitizeString(item.product?.nameAr || item.productNameAr, 120) : null,
-            quantity: Math.max(1, Number(item.quantity) || 1),
-            unitPrice: Math.max(0, Number(item.unitPrice) || 0),
-            totalPrice: Math.max(0, Number(item.totalPrice) || Number(item.unitPrice) || 0),
-            selectedRam: item.selectedRam ? sanitizeString(item.selectedRam, 30) : null,
-            selectedStorage: item.selectedStorage ? sanitizeString(item.selectedStorage, 30) : null,
-            selectedWarranty: item.selectedWarranty ? sanitizeString(item.selectedWarranty, 30) : null,
-          })),
+    // Execute order creation, stock decrements, inventory transactions & audit logs in an atomic transaction
+    const order = await prisma.$transaction(async (tx) => {
+      let calculatedSubtotal = 0;
+      const orderItemsToCreate: any[] = [];
+
+      for (const item of data.items) {
+        let verifiedPrice = item.unitPrice;
+        let verifiedName = item.productName;
+        let verifiedNameAr = item.productNameAr;
+
+        if (item.variantId) {
+          const variant = await tx.productVariant.findUnique({
+            where: { id: item.variantId },
+            include: { product: true },
+          });
+
+          if (!variant) {
+            throw new Error(`Variant not found for item: ${item.productName}`);
+          }
+
+          if (variant.stockCount < item.quantity) {
+            throw new Error(`Insufficient stock for "${variant.product.name}". Only ${variant.stockCount} left.`);
+          }
+
+          // Decrement variant stock
+          const newVariantStock = variant.stockCount - item.quantity;
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { stockCount: newVariantStock },
+          });
+
+          // Decrement parent product stock
+          const newProductStock = Math.max(0, variant.product.stockCount - item.quantity);
+          await tx.product.update({
+            where: { id: variant.productId },
+            data: {
+              stockCount: newProductStock,
+              inStock: newProductStock > 0,
+            },
+          });
+
+          // Record Inventory Transaction
+          await tx.inventoryTransaction.create({
+            data: {
+              productId: variant.productId,
+              variantId: variant.id,
+              quantityDelta: -item.quantity,
+              previousStock: variant.stockCount,
+              newStock: newVariantStock,
+              reason: 'order_created',
+              createdByName: cleanName,
+            },
+          });
+
+          verifiedPrice = Number(variant.price);
+          verifiedName = variant.product.name;
+          verifiedNameAr = variant.product.nameAr;
+        } else {
+          // Base product without variants
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+          });
+
+          if (!product) {
+            throw new Error(`Product not found: ${item.productName}`);
+          }
+
+          if (product.stockCount < item.quantity) {
+            throw new Error(`Insufficient stock for "${product.name}". Only ${product.stockCount} left.`);
+          }
+
+          const newStock = product.stockCount - item.quantity;
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stockCount: newStock,
+              inStock: newStock > 0,
+            },
+          });
+
+          await tx.inventoryTransaction.create({
+            data: {
+              productId: product.id,
+              quantityDelta: -item.quantity,
+              previousStock: product.stockCount,
+              newStock,
+              reason: 'order_created',
+              createdByName: cleanName,
+            },
+          });
+
+          verifiedPrice = Number(product.price);
+          verifiedName = product.name;
+          verifiedNameAr = product.nameAr;
+        }
+
+        const itemTotal = Number((verifiedPrice * item.quantity).toFixed(2));
+        calculatedSubtotal += itemTotal;
+
+        orderItemsToCreate.push({
+          productId: item.productId,
+          variantId: item.variantId || null,
+          productName: verifiedName,
+          productNameAr: verifiedNameAr || null,
+          quantity: item.quantity,
+          unitPrice: new Prisma.Decimal(verifiedPrice),
+          totalPrice: new Prisma.Decimal(itemTotal),
+          selectedOptions: item.selectedOptions || {},
+        });
+      }
+
+      const shipping = data.shipping ?? 0;
+      const discount = data.discount ?? 0;
+      const vat = Number((calculatedSubtotal * 0.14).toFixed(2)); // Standard 14% VAT in Egypt
+      const total = Math.max(0, Number((calculatedSubtotal + shipping + vat - discount).toFixed(2)));
+
+      const createdOrder = await tx.order.create({
+        data: {
+          id: orderId,
+          customerName: cleanName,
+          customerEmail: cleanEmail,
+          customerPhone: cleanPhone,
+          city: cleanCity,
+          address: cleanAddress,
+          postalCode: data.postalCode || null,
+          isCorporate: data.isCorporate ?? false,
+          companyName: data.companyName || null,
+          taxNumber: data.taxNumber || null,
+          paymentMethod: data.paymentMethod || 'cod',
+          paymentStatus: 'pending',
+          orderStatus: 'processing',
+          subtotal: new Prisma.Decimal(calculatedSubtotal),
+          shipping: new Prisma.Decimal(shipping),
+          vat: new Prisma.Decimal(vat),
+          discount: new Prisma.Decimal(discount),
+          total: new Prisma.Decimal(total),
+          notes: cleanNotes,
+          items: {
+            create: orderItemsToCreate,
+          },
         },
-      },
-      include: {
-        items: true,
-      },
+        include: {
+          items: true,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          action: 'ORDER_CREATE',
+          entityType: 'Order',
+          entityId: orderId,
+          userEmail: cleanEmail,
+          userName: cleanName,
+          details: {
+            orderId,
+            itemsCount: orderItemsToCreate.length,
+            subtotal: calculatedSubtotal,
+            total,
+            paymentMethod: data.paymentMethod,
+          },
+        },
+      });
+
+      return createdOrder;
     });
 
     ordersCache.clear();
     adminStatsCache.clear();
 
-    // Asynchronously dispatch confirmation to customer and alert to admin
-    sendOrderConfirmationEmails(order).catch((err) => {
+    const serialized = serializeOrder(order);
+
+    // Asynchronously dispatch confirmation emails
+    sendOrderConfirmationEmails(serialized).catch((err) => {
       console.error('[OrdersAPI] Error sending order confirmation emails:', err);
     });
 
-    return NextResponse.json({ success: true, order }, { status: 201 });
+    return apiSuccess({ order: serialized }, 201);
   } catch (error: any) {
-    console.error('Order creation error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    if (error.message && (error.message.startsWith('Insufficient stock') || error.message.includes('not found'))) {
+      return apiError(error.message, 400);
+    }
+    return handleApiError(error);
   }
 }
+

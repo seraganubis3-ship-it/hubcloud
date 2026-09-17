@@ -324,13 +324,15 @@ export default function AboutPage() {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <Link
-              href="/contact"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition-all flex items-center gap-2"
+            <a
+              href="https://wa.me/2001060777895"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-xl shadow-md transition-all flex items-center gap-2"
             >
-              <span>{isRtl ? 'طلب استشارة أو عرض أسعار' : 'Request Quote / Consultation'}</span>
+              <span>{isRtl ? 'تواصل مع فريقنا عبر واتساب' : 'Chat with Our Team on WhatsApp'}</span>
               <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-            </Link>
+            </a>
           </div>
         </div>
 

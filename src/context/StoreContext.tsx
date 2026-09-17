@@ -82,7 +82,7 @@ interface StoreContextType {
 
   // Cart
   cart: CartItem[];
-  addToCart: (product: Product, quantity?: number, options?: { ram?: string; storage?: string; warranty?: string; unitPrice?: number }) => void;
+  addToCart: (product: Product, quantity?: number, options?: { ram?: string; storage?: string; warranty?: string; variantId?: string; selectedOptions?: Record<string, any>; unitPrice?: number }) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -295,7 +295,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Only sync all database orders if the user has an administrative role
-      if (parsedUser && (parsedUser.role === 'admin' || parsedUser.email?.includes('admin'))) {
+      if (parsedUser && parsedUser.role === 'admin') {
         fetch('/api/orders')
           .then(res => res.json())
           .then(data => {
@@ -377,10 +377,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addToCart = (
     product: Product,
     quantity = 1,
-    options?: { ram?: string; storage?: string; warranty?: string; unitPrice?: number }
+    options?: { ram?: string; storage?: string; warranty?: string; variantId?: string; selectedOptions?: Record<string, any>; unitPrice?: number }
   ) => {
     const finalUnitPrice = options?.unitPrice || product.price;
-    const itemKey = `${product.id}-${options?.ram || ''}-${options?.storage || ''}-${options?.warranty || ''}`;
+    const itemKey = options?.variantId
+      ? `${product.id}-${options.variantId}`
+      : `${product.id}-${options?.ram || ''}-${options?.storage || ''}-${options?.warranty || ''}`;
 
     setCart(prev => {
       const existingIndex = prev.findIndex(item => item.id === itemKey);
@@ -403,6 +405,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             selectedRam: options?.ram,
             selectedStorage: options?.storage,
             selectedWarranty: options?.warranty,
+            selectedVariantId: options?.variantId,
+            selectedOptions: options?.selectedOptions,
             unitPrice: finalUnitPrice,
             totalPrice: quantity * finalUnitPrice
           }

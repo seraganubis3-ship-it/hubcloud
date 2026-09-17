@@ -5,7 +5,7 @@ export const SEED_CATEGORIES = [
     nameAr: 'أجهزة اللابتوب',
     slug: 'laptops',
     itemCount: 48,
-    image: '/images/category_laptops.jpg',
+    image: '/images/category_laptops.png',
   },
   {
     id: 'desktops',
@@ -13,7 +13,7 @@ export const SEED_CATEGORIES = [
     nameAr: 'أجهزة الكمبيوتر المكتبية',
     slug: 'desktops',
     itemCount: 32,
-    image: '/images/category_desktops.jpg',
+    image: '/images/category_desktops.png',
   },
   {
     id: 'network-device',
@@ -21,7 +21,7 @@ export const SEED_CATEGORIES = [
     nameAr: 'أجهزة ومعدات الشبكات',
     slug: 'network-device',
     itemCount: 26,
-    image: '/images/category_network.jpg',
+    image: '/images/category_network.png',
   },
   {
     id: 'scanner',
@@ -29,7 +29,7 @@ export const SEED_CATEGORIES = [
     nameAr: 'الماسحات الضوئية وطابعات المستندات',
     slug: 'scanner',
     itemCount: 18,
-    image: '/images/category_scanner.jpg',
+    image: '/images/category_scanner.png',
   },
   {
     id: 'accessories',
@@ -37,7 +37,7 @@ export const SEED_CATEGORIES = [
     nameAr: 'الإكسسوارات والملحقات',
     slug: 'accessories',
     itemCount: 64,
-    image: '/images/category_accessories.jpg',
+    image: '/images/category_accessories.png',
   },
 ];
 

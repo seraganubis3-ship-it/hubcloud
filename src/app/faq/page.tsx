@@ -130,12 +130,13 @@ export default function FaqPage() {
               <MessageCircle className="w-4 h-4" />
               <span>{isRtl ? 'تواصل عبر واتساب' : 'WhatsApp Support'}</span>
             </a>
-            <Link
-              href="/contact"
+            <a
+              href="tel:+2001060777895"
               className="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs px-4 py-2.5 rounded-xl transition-colors"
             >
-              <span>{isRtl ? 'صفحة اتصل بنا' : 'Contact Page'}</span>
-            </Link>
+              <Phone className="w-4 h-4 text-blue-600" />
+              <span>{isRtl ? 'اتصال هاتفياً' : 'Call Support'}</span>
+            </a>
           </div>
         </div>
 

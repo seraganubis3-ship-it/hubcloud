@@ -164,6 +164,7 @@ export interface CartItem {
   selectedStorage?: string;
   selectedWarranty?: string;
   selectedVariantId?: string;
+  selectedOptions?: Record<string, any>;
   unitPrice: number;
   totalPrice: number;
 }

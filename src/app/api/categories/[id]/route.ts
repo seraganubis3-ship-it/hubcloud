@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
 import { categoriesListCache, categoryFiltersCache } from '@/lib/server-cache';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
 
 export async function GET(
   request: Request,
@@ -32,12 +32,12 @@ export async function GET(
     });
 
     if (!category) {
-      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+      return apiError('Category not found', 404);
     }
 
-    return NextResponse.json({ success: true, category });
+    return apiSuccess({ category });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -57,7 +57,7 @@ export async function PUT(
     });
 
     if (!existing) {
-      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+      return apiError('Category not found', 404);
     }
 
     const updated = await prisma.category.update({
@@ -88,16 +88,16 @@ export async function PUT(
         action: 'CATEGORY_UPDATE',
         entityType: 'Category',
         entityId: updated.id,
-        details: JSON.stringify({ changes: body, updatedBy: auth.user.email }),
+        details: { changes: body, updatedBy: auth.user.email },
       },
     });
 
     categoriesListCache.clear();
     categoryFiltersCache.delete(updated.slug.toLowerCase());
 
-    return NextResponse.json({ success: true, category: updated });
+    return apiSuccess({ category: updated });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -121,16 +121,13 @@ export async function DELETE(
     });
 
     if (!cat) {
-      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+      return apiError('Category not found', 404);
     }
 
     if (cat._count.products > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Cannot delete category: it currently contains ${cat._count.products} products. Please reassign or delete the products first.`,
-        },
-        { status: 400 }
+      return apiError(
+        `Cannot delete category: it currently contains ${cat._count.products} products. Please reassign or delete the products first.`,
+        400
       );
     }
 
@@ -147,15 +144,15 @@ export async function DELETE(
         action: 'CATEGORY_DELETE',
         entityType: 'Category',
         entityId: cat.id,
-        details: JSON.stringify({ deletedCategory: cat.name, slug: cat.slug }),
+        details: { deletedCategory: cat.name, slug: cat.slug },
       },
     });
 
     categoriesListCache.clear();
     categoryFiltersCache.delete(cat.slug.toLowerCase());
 
-    return NextResponse.json({ success: true, message: `Category ${cat.name} deleted successfully` });
+    return apiSuccess({ message: `Category ${cat.name} deleted successfully` });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }

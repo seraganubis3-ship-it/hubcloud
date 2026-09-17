@@ -2,6 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useStore } from '@/context/StoreContext';
+import { ShieldCheck } from 'lucide-react';
 import {
   AppleLogo,
   DellLogo,
@@ -19,6 +21,8 @@ import {
 } from '@/components/ui/BrandLogos';
 
 export const BrandRow: React.FC = () => {
+  const { isRtl } = useStore();
+
   const partners = [
     { id: 'dell', name: 'Dell Technologies', component: DellLogo, height: 'h-7 sm:h-8' },
     { id: 'hp', name: 'HP Enterprise', component: HPLogo, height: 'h-7 sm:h-8' },
@@ -35,33 +39,61 @@ export const BrandRow: React.FC = () => {
     { id: 'kaspersky', name: 'Kaspersky', component: KasperskyLogo, height: 'h-4 sm:h-5' },
   ];
 
+  // Double list for infinite seamless loop
+  const marqueePartners = [...partners, ...partners];
+
   return (
-    <section className="py-2.5">
+    <section className="py-4 sm:py-6 overflow-hidden">
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6">
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200/80 px-4 py-4 sm:py-5 shadow-xs">
-          {/* 13 Official Partners Logos Strip - Protected with dir="ltr" to ensure flawless alignment in Arabic (RTL) */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200/80 p-4 sm:p-5 shadow-xs overflow-hidden">
+          
+          {/* Section Header */}
+          <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4 text-center">
+            <ShieldCheck className="w-4 h-4 text-blue-600" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              {isRtl ? 'شركاء العتاد والتكنولوجيا المعتمدون' : 'Authorized Technology Partners'}
+            </span>
+          </div>
+
+          {/* Continuous Sliding Marquee Container */}
           <div
             dir="ltr"
             style={{ direction: 'ltr' }}
-            className="flex items-center gap-6 sm:gap-8 md:gap-9 overflow-x-auto scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1 px-2 justify-start xl:justify-between"
+            className="relative w-full overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_40px,_black_calc(100%-40px),transparent_100%)]"
           >
-            {partners.map((brand) => {
-              const LogoComp = brand.component;
-              return (
-                <Link
-                  key={brand.id}
-                  href={`/products?brand=${brand.id}`}
-                  aria-label={brand.name}
-                  title={brand.name}
-                  className="flex-shrink-0 flex items-center justify-center py-2 px-3 sm:px-4 rounded-xl hover:bg-slate-50 transition-all duration-200 group"
-                >
-                  <LogoComp className={`${brand.height} transition-transform duration-200 group-hover:scale-110`} />
-                </Link>
-              );
-            })}
+            <div className="flex items-center gap-8 sm:gap-12 w-max animate-brand-marquee hover:[animation-play-state:paused] py-1">
+              {marqueePartners.map((brand, idx) => {
+                const LogoComp = brand.component;
+                return (
+                  <Link
+                    key={`${brand.id}-${idx}`}
+                    href={`/products?brand=${brand.id}`}
+                    aria-label={brand.name}
+                    title={brand.name}
+                    className="flex-shrink-0 flex items-center justify-center px-2 hover:scale-110 transition-transform duration-200"
+                  >
+                    <LogoComp className={`${brand.height} opacity-80 hover:opacity-100 transition-opacity`} />
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes brandMarquee {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        .animate-brand-marquee {
+          animation: brandMarquee 35s linear infinite;
+        }
+      `}</style>
     </section>
   );
 };

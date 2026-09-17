@@ -74,13 +74,28 @@ export const MainHeader: React.FC = () => {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-3 sm:gap-4 lg:gap-8">
-        {/* Mobile Menu Button */}
+        {/* Animated Mobile Burger Button */}
         <button
-          onClick={() => setMobileMenuOpen(true)}
-          className="lg:hidden p-2 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors"
-          aria-label="Open mobile menu"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="lg:hidden relative w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-slate-50/80 hover:bg-slate-100 text-slate-700 transition-all active:scale-95 shadow-2xs"
+          aria-label={mobileMenuOpen ? 'Close mobile menu' : 'Open mobile menu'}
+          aria-expanded={mobileMenuOpen}
         >
-          <Menu className="w-6 h-6" />
+          <span
+            className={`w-5 h-0.5 bg-slate-700 rounded-full transition-all duration-300 transform origin-center ${
+              mobileMenuOpen ? 'rotate-45 translate-y-2 bg-blue-600' : ''
+            }`}
+          />
+          <span
+            className={`w-3.5 h-0.5 bg-slate-700 rounded-full transition-all duration-200 ${
+              mobileMenuOpen ? 'opacity-0 scale-x-0' : 'opacity-100'
+            }`}
+          />
+          <span
+            className={`w-5 h-0.5 bg-slate-700 rounded-full transition-all duration-300 transform origin-center ${
+              mobileMenuOpen ? '-rotate-45 -translate-y-2 bg-blue-600' : ''
+            }`}
+          />
         </button>
 
         {/* Brand Logo */}
@@ -140,44 +155,44 @@ export const MainHeader: React.FC = () => {
           {currentUser?.role === 'admin' && (
             <Link
               href="/admin"
-              className="hidden sm:flex flex-col items-center group text-gray-700 hover:text-hub-blue transition-colors"
+              className="hidden sm:flex flex-col items-center group text-slate-700 hover:text-blue-600 transition-colors"
               title="Admin CMS Dashboard"
             >
-              <Shield className="w-5 h-5 text-purple-600 group-hover:text-hub-blue transition-colors" />
-              <span className="text-[11px] font-bold mt-0.5 text-purple-700">{isRtl ? 'الإدارة' : 'Admin'}</span>
+              <Shield className="w-5 h-5 text-slate-700 group-hover:text-blue-600 transition-colors" />
+              <span className="text-[11px] font-bold mt-0.5 text-slate-600 group-hover:text-blue-600 transition-colors">{isRtl ? 'الإدارة' : 'Admin'}</span>
             </Link>
           )}
 
           {/* Compare */}
           <Link
             href="/compare"
-            className="hidden sm:flex flex-col items-center group text-gray-700 hover:text-hub-blue transition-colors relative"
+            className="hidden sm:flex flex-col items-center group text-slate-700 hover:text-blue-600 transition-colors relative"
           >
             <div className="relative">
-              <Shuffle className="w-5 h-5 text-gray-600 group-hover:text-hub-blue transition-colors" />
+              <Shuffle className="w-5 h-5 text-slate-700 group-hover:text-blue-600 transition-colors" />
               {compareCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-hub-blue text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-blue-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                   {compareCount}
                 </span>
               )}
             </div>
-            <span className="text-[11px] font-bold mt-0.5">{isRtl ? 'المقارنة' : 'Compare'}</span>
+            <span className="text-[11px] font-bold mt-0.5 text-slate-600 group-hover:text-blue-600 transition-colors">{isRtl ? 'المقارنة' : 'Compare'}</span>
           </Link>
 
           {/* Wishlist */}
           <Link
             href="/wishlist"
-            className="flex flex-col items-center group text-gray-700 hover:text-hub-blue transition-colors relative"
+            className="flex flex-col items-center group text-slate-700 hover:text-blue-600 transition-colors relative"
           >
             <div className="relative">
-              <Heart className="w-5 h-5 text-gray-600 group-hover:text-hub-blue transition-colors" />
+              <Heart className="w-5 h-5 text-slate-700 group-hover:text-blue-600 transition-colors" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-hub-blue text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-blue-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                   {wishlistCount}
                 </span>
               )}
             </div>
-            <span className="text-[11px] font-bold mt-0.5 hidden sm:inline">{isRtl ? 'المفضلة' : 'Wishlist'}</span>
+            <span className="text-[11px] font-bold mt-0.5 text-slate-600 group-hover:text-blue-600 transition-colors hidden sm:inline">{isRtl ? 'المفضلة' : 'Wishlist'}</span>
           </Link>
 
           {/* Account / User Menu */}
@@ -187,12 +202,12 @@ export const MainHeader: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex flex-col items-center group text-gray-700 hover:text-hub-blue transition-colors relative"
+                  className="flex flex-col items-center group text-slate-700 hover:text-blue-600 transition-colors relative"
                 >
-                  <div className="w-6 h-6 rounded-full bg-blue-100 border border-blue-200 text-blue-700 font-bold text-[10px] flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-bold text-[10px] flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-colors">
                     {currentUser.name.slice(0, 2).toUpperCase()}
                   </div>
-                  <span className="text-[11px] font-bold mt-0.5 max-w-[60px] truncate hidden sm:inline">
+                  <span className="text-[11px] font-bold mt-0.5 text-slate-600 group-hover:text-blue-600 transition-colors max-w-[60px] truncate hidden sm:inline">
                     {currentUser.name.split(' ')[0]}
                   </span>
                 </button>
@@ -229,9 +244,9 @@ export const MainHeader: React.FC = () => {
                       <Link
                         href="/admin"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-purple-700 font-bold hover:bg-purple-50 transition-colors"
+                        className="flex items-center gap-2.5 px-4 py-2 text-slate-700 font-bold hover:bg-slate-100 transition-colors"
                       >
-                        <Shield className="w-4 h-4 text-purple-600" />
+                        <Shield className="w-4 h-4 text-blue-600" />
                         <span>{isRtl ? 'لوحة الإدارة (Admin CMS)' : 'Admin Suite'}</span>
                       </Link>
                     )}
@@ -255,10 +270,10 @@ export const MainHeader: React.FC = () => {
             ) : (
               <Link
                 href="/login"
-                className="flex flex-col items-center group text-gray-700 hover:text-hub-blue transition-colors"
+                className="flex flex-col items-center group text-slate-700 hover:text-blue-600 transition-colors"
               >
-                <User className="w-5 h-5 text-gray-600 group-hover:text-hub-blue transition-colors" />
-                <span className="text-[11px] font-bold mt-0.5 hidden sm:inline">{isRtl ? 'دخول' : 'Sign In'}</span>
+                <User className="w-5 h-5 text-slate-700 group-hover:text-blue-600 transition-colors" />
+                <span className="text-[11px] font-bold mt-0.5 text-slate-600 group-hover:text-blue-600 transition-colors hidden sm:inline">{isRtl ? 'دخول' : 'Sign In'}</span>
               </Link>
             )}
           </div>
@@ -266,19 +281,19 @@ export const MainHeader: React.FC = () => {
           {/* Cart */}
           <Link
             href="/cart"
-            className="flex items-center gap-2 group bg-blue-50/80 hover:bg-blue-100 text-hub-blue px-3 py-1.5 rounded-xl border border-blue-200 transition-colors"
+            className="flex items-center gap-2 group bg-slate-50 hover:bg-blue-50/80 text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 transition-colors"
           >
             <div className="relative">
-              <ShoppingCart className="w-5 h-5 text-hub-blue transition-transform group-hover:scale-110" />
+              <ShoppingCart className="w-5 h-5 text-slate-700 group-hover:text-blue-600 transition-transform group-hover:scale-110" />
               {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2.5 bg-hub-blue text-white text-[11px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center px-1 shadow-sm">
+                <span className="absolute -top-2 -right-2.5 bg-blue-600 text-white text-[11px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center px-1 shadow-xs">
                   {cartCount}
                 </span>
               )}
             </div>
             <div className="hidden xl:flex flex-col text-start">
-              <span className="text-[10px] text-gray-500 uppercase font-bold leading-none">{isRtl ? 'السلة' : 'Cart'}</span>
-              <span className="text-[12px] font-black text-hub-blue leading-tight font-mono">{formatPrice(subtotal)}</span>
+              <span className="text-[10px] text-slate-500 uppercase font-bold leading-none">{isRtl ? 'السلة' : 'Cart'}</span>
+              <span className="text-[12px] font-black text-slate-900 group-hover:text-blue-600 leading-tight font-mono">{formatPrice(subtotal)}</span>
             </div>
           </Link>
 
@@ -286,12 +301,12 @@ export const MainHeader: React.FC = () => {
           <button
             type="button"
             onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-gray-200 hover:border-hub-blue hover:bg-blue-50/70 text-gray-700 hover:text-hub-blue transition-all text-[12px] font-bold shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/60 text-slate-700 hover:text-blue-600 transition-all text-[12px] font-bold shadow-2xs group"
             title={isRtl ? 'Switch to English' : 'التحويل للغة العربية'}
             aria-label="Change Language"
           >
-            <Globe className="w-4 h-4 text-hub-blue" />
-            <span className="font-extrabold uppercase">
+            <Globe className="w-4 h-4 text-slate-700 group-hover:text-blue-600 transition-colors" />
+            <span className="font-extrabold uppercase text-slate-700 group-hover:text-blue-600 transition-colors">
               {language === 'ar' ? 'EN' : 'عربي'}
             </span>
           </button>
@@ -336,103 +351,274 @@ export const MainHeader: React.FC = () => {
         </form>
       </div>
 
-      {/* Mobile Drawer Navigation (Slide-over) */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-            onClick={() => setMobileMenuOpen(false)}
-          />
+      {/* Mobile Drawer Navigation (Slide-over with smooth 60fps Open/Close CSS transition) */}
+      <div
+        className={`fixed inset-0 z-50 transition-all duration-300 ${
+          mobileMenuOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'
+        }`}
+        aria-hidden={!mobileMenuOpen}
+      >
+        {/* Smooth Backdrop Fade In & Out */}
+        <div
+          className={`fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
+            mobileMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={() => setMobileMenuOpen(false)}
+        />
 
-          {/* Drawer Content */}
-          <div className="relative w-4/5 max-w-sm bg-white h-full shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-left rtl:slide-in-from-right duration-300">
+        {/* Drawer Content with Smooth Slide In & Out */}
+        <div
+          dir={isRtl ? 'rtl' : 'ltr'}
+          className={`fixed top-0 bottom-0 ${
+            isRtl ? 'right-0' : 'left-0'
+          } w-[86%] max-w-sm bg-white h-full shadow-2xl flex flex-col justify-between z-10 transition-transform duration-300 ease-out transform ${
+            mobileMenuOpen
+              ? 'translate-x-0'
+              : isRtl
+              ? 'translate-x-full'
+              : '-translate-x-full'
+          }`}
+        >
+          {/* Top Section (Scrollable) */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {/* Drawer Header */}
-            <div>
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-slate-900 text-white">
-                <Logo size="sm" />
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="p-1 rounded-lg bg-slate-800 text-white hover:bg-slate-700"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10 shadow-2xs">
+              <Logo size="sm" />
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-9 h-9 rounded-xl border border-gray-200 hover:border-gray-300 bg-slate-50 hover:bg-slate-100 text-slate-700 flex items-center justify-center transition-all active:scale-95"
+                aria-label="Close menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-              {/* Language Switcher in Drawer */}
-              <div className="p-3 bg-blue-50/60 border-b border-blue-100 flex items-center justify-between text-[12px]">
-                <span className="font-bold text-gray-700 flex items-center gap-1.5">
-                  <Globe className="w-4 h-4 text-hub-blue" />
-                  {isRtl ? 'اللغة' : 'Language'}
-                </span>
-                <button
-                  onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-                  className="px-3 py-1 bg-white border border-blue-200 rounded-lg font-black text-hub-blue shadow-2xs"
-                >
-                  {language === 'ar' ? 'English (EN)' : 'العربية (AR)'}
-                </button>
-              </div>
+            {/* User Profile Card / Sign In */}
+            <div className="p-4 border-b border-gray-100 bg-slate-50/60">
+              {currentUser ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                      {currentUser.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-extrabold text-gray-900 text-[13px] truncate">
+                        {currentUser.name}
+                      </div>
+                      <div className="text-[11px] text-gray-500 truncate font-mono">
+                        {currentUser.email}
+                      </div>
+                    </div>
+                  </div>
 
-              {/* 5 Core Categories Links */}
-              <div className="p-3 space-y-1">
-                <div className="px-3 py-1.5 text-[11px] font-black text-gray-400 uppercase tracking-wider">
-                  {isRtl ? 'الأقسام الرئيسية' : 'Categories'}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <Link
+                      href="/account"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white border border-gray-200 hover:border-blue-500 text-[12px] font-bold text-slate-700 hover:text-blue-600 transition-colors shadow-2xs"
+                    >
+                      <User className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{isRtl ? 'حسابي' : 'My Account'}</span>
+                    </Link>
+                    <Link
+                      href="/account"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white border border-gray-200 hover:border-blue-500 text-[12px] font-bold text-slate-700 hover:text-blue-600 transition-colors shadow-2xs"
+                    >
+                      <Package className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{isRtl ? 'طلباتي' : 'My Orders'}</span>
+                    </Link>
+                  </div>
                 </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between p-3 rounded-xl bg-white border border-gray-200 hover:border-blue-500 hover:shadow-xs transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div className="text-start">
+                      <div className="text-[13px] font-black text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {isRtl ? 'تسجيل الدخول / إنشاء حساب' : 'Sign In / Register'}
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        {isRtl ? 'لمتابعة طلباتك وضمانك' : 'Manage orders & warranty'}
+                      </div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 rtl:rotate-180 transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
+                </Link>
+              )}
+            </div>
 
-                {categories.filter(c => c.id !== 'all').map((cat) => {
+            {/* Language Switcher Segmented Control */}
+            <div className="p-4 border-b border-gray-100">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-blue-600" />
+                <span>{isRtl ? 'اللغة المفضلة' : 'Select Language'}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setLanguage('ar')}
+                  className={`py-2 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                    language === 'ar'
+                      ? 'bg-white text-blue-600 shadow-xs border border-gray-200/80'
+                      : 'text-slate-600 hover:text-gray-900'
+                  }`}
+                >
+                  <span>العربية (AR)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage('en')}
+                  className={`py-2 px-3 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                    language === 'en'
+                      ? 'bg-white text-blue-600 shadow-xs border border-gray-200/80'
+                      : 'text-slate-600 hover:text-gray-900'
+                  }`}
+                >
+                  <span>English (EN)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Core 5 Categories */}
+            <div className="p-4 space-y-1.5">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                {isRtl ? 'الأقسام والمنتجات' : 'Core Categories'}
+              </div>
+
+              {categories
+                .filter((c) => c.id !== 'all')
+                .map((cat) => {
                   const Icon = cat.icon;
+                  const catColors: Record<string, string> = {
+                    laptops: 'bg-blue-50 text-blue-600 border-blue-100',
+                    desktops: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+                    'network-device': 'bg-cyan-50 text-cyan-600 border-cyan-100',
+                    scanner: 'bg-teal-50 text-teal-600 border-teal-100',
+                    accessories: 'bg-purple-50 text-purple-600 border-purple-100',
+                  };
+
                   return (
                     <Link
                       key={cat.id}
                       href={`/category/${cat.id}`}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center justify-between p-3 rounded-xl hover:bg-blue-50 text-gray-800 hover:text-hub-blue font-bold text-[13px] transition-colors"
+                      className="flex items-center justify-between p-2.5 rounded-xl hover:bg-blue-50/70 border border-transparent hover:border-blue-100 text-gray-800 hover:text-blue-600 transition-all group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gray-100 text-hub-blue rounded-lg">
+                        <div
+                          className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-transform group-hover:scale-105 ${
+                            catColors[cat.id] || 'bg-slate-50 text-slate-600 border-slate-200'
+                          }`}
+                        >
                           <Icon className="w-4 h-4" />
                         </div>
-                        <span>{isRtl ? cat.nameAr : cat.name}</span>
+                        <span className="font-bold text-[13px]">{isRtl ? cat.nameAr : cat.name}</span>
                       </div>
-                      <ArrowRight className="w-4 h-4 rtl:rotate-180 text-gray-400" />
+                      <ArrowRight className="w-4 h-4 rtl:rotate-180 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-all" />
                     </Link>
                   );
                 })}
 
-                <Link
-                  href="/deals"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between p-3 rounded-xl bg-red-50 text-red-600 font-black text-[13px] transition-colors mt-2"
-                >
-                  <div className="flex items-center gap-3">
-                    <Flame className="w-4 h-4 text-red-600 fill-red-600" />
-                    <span>{isRtl ? 'عروض وتخفيضات اليوم' : "Today's Flash Deals"}</span>
+              {/* Special Flash Deals Highlight */}
+              <Link
+                href="/deals"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-red-50 to-rose-50 border border-red-100 text-red-600 font-black text-[13px] hover:shadow-xs transition-all mt-3 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shadow-xs">
+                    <Flame className="w-4 h-4 fill-white" />
                   </div>
-                  <span className="px-2 py-0.5 bg-red-600 text-white rounded text-[10px] font-bold">HOT</span>
-                </Link>
-              </div>
+                  <span>{isRtl ? 'عروض وتخفيضات اليوم' : "Today's Flash Deals"}</span>
+                </div>
+                <span className="px-2 py-0.5 bg-red-600 text-white rounded-md text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                  {isRtl ? 'تخفيضات' : 'HOT'}
+                </span>
+              </Link>
             </div>
 
-            {/* Drawer Bottom */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50 space-y-2 text-[12px]">
-              {currentUser?.role === 'admin' && (
+            {/* Customer Care & Quick Policies */}
+            <div className="p-4 border-t border-gray-100 space-y-1">
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                {isRtl ? 'خدمات وضمان' : 'Help & Policies'}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[12px]">
                 <Link
-                  href="/admin"
+                  href="/warranty"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 p-2.5 bg-slate-900 text-white rounded-xl font-bold justify-center"
+                  className="p-2 rounded-lg bg-slate-50 text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
                 >
-                  <Shield className="w-4 h-4 text-cyan-400" />
-                  <span>{isRtl ? 'لوحة تحكم الإدارة (Admin CMS)' : 'Admin Operations Center'}</span>
+                  {isRtl ? '🛡️ الضمان الرسمي' : '🛡️ Warranty'}
                 </Link>
-              )}
-              <div className="flex items-center justify-center gap-2 text-gray-500 pt-1">
-                <Phone className="w-3.5 h-3.5 text-hub-blue" />
-                <span>(+20) 010 222 88 444</span>
+                <Link
+                  href="/shipping"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-lg bg-slate-50 text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+                >
+                  {isRtl ? '🚚 الشحن والتوصيل' : '🚚 Delivery'}
+                </Link>
+                <Link
+                  href="/returns"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-lg bg-slate-50 text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+                >
+                  {isRtl ? '🔄 الاستبدال والاسترجاع' : '🔄 Returns'}
+                </Link>
+                <Link
+                  href="/about"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-lg bg-slate-50 text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+                >
+                  {isRtl ? 'ℹ️ عن Hubcloud' : 'ℹ️ About Us'}
+                </Link>
               </div>
             </div>
           </div>
+
+          {/* Drawer Footer */}
+          <div className="p-4 border-t border-gray-200 bg-slate-50 space-y-2.5 text-[12px]">
+            {/* Direct WhatsApp Action */}
+            <a
+              href="https://wa.me/2001060777895"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all shadow-xs active:scale-95"
+            >
+              <span>💬</span>
+              <span>{isRtl ? 'تواصل عبر واتساب مباشر' : 'Live WhatsApp Support'}</span>
+            </a>
+
+            {/* Hotline Phone */}
+            <a
+              href="tel:+2001060777895"
+              className="flex items-center justify-center gap-2 text-slate-600 hover:text-blue-600 font-mono text-[11.5px] transition-colors py-0.5"
+              dir="ltr"
+            >
+              <Phone className="w-3.5 h-3.5 text-blue-600" />
+              <span>+20 010 60 777 895</span>
+            </a>
+
+            {/* Admin Center Link if Admin */}
+            {currentUser?.role === 'admin' && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 p-2 bg-slate-900 text-white rounded-xl font-bold justify-center text-[11px]"
+              >
+                <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{isRtl ? 'لوحة تحكم الإدارة (Admin CMS)' : 'Admin Suite'}</span>
+              </Link>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </header>
   );
 };

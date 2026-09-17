@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
 import { categoriesListCache } from '@/lib/server-cache';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,8 +10,9 @@ export async function GET(request: Request) {
 
   const cached = categoriesListCache.get(cacheKey);
   if (cached) {
-    return NextResponse.json(
-      { success: true, categories: cached, cached: true },
+    return apiSuccess(
+      { categories: cached, cached: true },
+      200,
       { headers: { 'Cache-Control': includeAll ? 'private, s-maxage=30' : 'public, s-maxage=60, stale-while-revalidate=300' } }
     );
   }
@@ -37,11 +38,9 @@ export async function GET(request: Request) {
 
     categoriesListCache.set(cacheKey, formatted);
 
-    return NextResponse.json(
-      {
-        success: true,
-        categories: formatted,
-      },
+    return apiSuccess(
+      { categories: formatted },
+      200,
       {
         headers: {
           'Cache-Control': includeAll ? 'private, s-maxage=30' : 'public, s-maxage=60, stale-while-revalidate=300',
@@ -51,9 +50,9 @@ export async function GET(request: Request) {
   } catch (error: any) {
     const fallback = categoriesListCache.get(cacheKey);
     if (fallback) {
-      return NextResponse.json({ success: true, categories: fallback, cached: true });
+      return apiSuccess({ categories: fallback, cached: true });
     }
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -65,10 +64,7 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     if (!body.name || !body.slug) {
-      return NextResponse.json(
-        { success: false, error: 'Category name and slug are required' },
-        { status: 400 }
-      );
+      return apiError('Category name and slug are required', 400);
     }
 
     const cleanSlug = body.slug.toLowerCase().trim().replace(/[^a-z0-9-]+/g, '-');
@@ -79,10 +75,7 @@ export async function POST(request: Request) {
     });
 
     if (existing) {
-      return NextResponse.json(
-        { success: false, error: 'A category with this slug already exists.' },
-        { status: 409 }
-      );
+      return apiError('A category with this slug already exists.', 409);
     }
 
     const created = await prisma.category.create({
@@ -118,14 +111,12 @@ export async function POST(request: Request) {
         action: 'CATEGORY_CREATE',
         entityType: 'Category',
         entityId: created.id,
-        details: JSON.stringify({ slug: created.slug, name: created.name }),
+        details: { slug: created.slug, name: created.name },
       },
     });
 
-    categoriesListCache.clear();
-
-    return NextResponse.json({ success: true, category: created }, { status: 201 });
+    return apiSuccess({ category: created }, 201);
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }

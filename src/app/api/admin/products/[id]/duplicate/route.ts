@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
+import { Prisma } from '@prisma/client';
 
 export async function POST(
   request: Request,
@@ -54,13 +55,13 @@ export async function POST(
         status: 'draft', // Saved as draft initially
         weight: original.weight,
         thumbnail: original.thumbnail,
-        images: original.images,
+        images: (original.images as Prisma.InputJsonValue) ?? [],
         description: original.description,
         descriptionAr: original.descriptionAr,
-        specs: original.specs,
-        specsAr: original.specsAr,
-        features: original.features,
-        featuresAr: original.featuresAr,
+        specs: (original.specs as Prisma.InputJsonValue) ?? {},
+        specsAr: original.specsAr ? (original.specsAr as Prisma.InputJsonValue) : Prisma.JsonNull,
+        features: original.features ? (original.features as Prisma.InputJsonValue) : Prisma.JsonNull,
+        featuresAr: original.featuresAr ? (original.featuresAr as Prisma.InputJsonValue) : Prisma.JsonNull,
         seoTitle: original.seoTitle ? original.seoTitle + ' - Copy' : null,
         metaDescription: original.metaDescription,
         searchKeywords: original.searchKeywords,
@@ -92,8 +93,8 @@ export async function POST(
           costPrice: v.costPrice,
           stockCount: 0,
           image: v.image,
-          options: v.options,
-          status: 'draft',
+          options: (v.options as Prisma.InputJsonValue) ?? {},
+          status: 'inactive',
         },
       }).catch(() => {});
     }
@@ -107,7 +108,7 @@ export async function POST(
         action: 'PRODUCT_DUPLICATE',
         entityType: 'Product',
         entityId: duplicated.id,
-        details: JSON.stringify({ originalId: id, originalSku: original.sku, newSku }),
+        details: { originalId: id, originalSku: original.sku, newSku },
       },
     });
 

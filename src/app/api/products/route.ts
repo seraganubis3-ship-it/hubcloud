@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
+import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
+import { serializeProduct } from '@/lib/product-helpers';
+import { Prisma } from '@prisma/client';
 
 let cachedCatalog: { products: any[]; categories: any[]; timestamp: number } | null = null;
 const CATALOG_CACHE_TTL = 60 * 1000; // 60 seconds
@@ -37,8 +39,7 @@ export async function GET(request: Request) {
 
     const now = Date.now();
     if (isDefaultQuery && cachedCatalog && now - cachedCatalog.timestamp < CATALOG_CACHE_TTL) {
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         count: cachedCatalog.products.length,
         categories: cachedCatalog.categories,
         products: cachedCatalog.products,
@@ -56,7 +57,6 @@ export async function GET(request: Request) {
     }
 
     if (brand && brand !== 'all') {
-      // Support comma-separated brands e.g. "dell,hp"
       const brandsList = brand.split(',').map((b) => b.trim());
       if (brandsList.length === 1) {
         where.brand = { equals: brandsList[0], mode: 'insensitive' };
@@ -71,14 +71,15 @@ export async function GET(request: Request) {
         { nameAr: { contains: search, mode: 'insensitive' } },
         { brand: { contains: search, mode: 'insensitive' } },
         { sku: { contains: search, mode: 'insensitive' } },
-        { specs: { contains: search, mode: 'insensitive' } },
+        { searchKeywords: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.price = {};
-      if (minPrice !== undefined) where.price.gte = minPrice;
-      if (maxPrice !== undefined) where.price.lte = maxPrice;
+      if (minPrice !== undefined) where.price.gte = new Prisma.Decimal(minPrice);
+      if (maxPrice !== undefined) where.price.lte = new Prisma.Decimal(maxPrice);
     }
 
     if (inStockOnly) {
@@ -86,26 +87,17 @@ export async function GET(request: Request) {
       where.stockCount = { gt: 0 };
     }
 
-    // Dynamic Attribute Filtering (AND logic between attributes, OR logic between values of same attribute)
+    // Dynamic Attribute Filtering
     const filterEntries = Object.entries(attributeFilters);
     if (filterEntries.length > 0) {
       where.AND = filterEntries.map(([slug, values]) => {
         return {
-          OR: [
-            // Match via EAV ProductAttributeValue relation
-            {
-              attributeValues: {
-                some: {
-                  attribute: { slug: { equals: slug, mode: 'insensitive' } },
-                  textValue: { in: values, mode: 'insensitive' },
-                },
-              },
+          attributeValues: {
+            some: {
+              attribute: { slug: { equals: slug, mode: 'insensitive' } },
+              textValue: { in: values, mode: 'insensitive' },
             },
-            // Fallback: match via specs text
-            ...values.map((v) => ({
-              specs: { contains: v, mode: 'insensitive' },
-            })),
-          ],
+          },
         };
       });
     }
@@ -137,60 +129,7 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    // Parse JSON fields
-    const parsedProducts = products.map((p) => {
-      const cat = p.category as any;
-      let parsedImages = [];
-      let parsedSpecs = {};
-      let parsedSpecsAr = undefined;
-      let parsedFeatures = undefined;
-      let parsedFeaturesAr = undefined;
-      let parsedRamOptions = undefined;
-      let parsedStorageOptions = undefined;
-      let parsedWarrantyOptions = undefined;
-
-      try {
-        parsedImages = JSON.parse(p.images || '[]');
-        parsedSpecs = JSON.parse(p.specs || '{}');
-        if (p.specsAr) parsedSpecsAr = JSON.parse(p.specsAr);
-        if (p.features) parsedFeatures = JSON.parse(p.features);
-        if (p.featuresAr) parsedFeaturesAr = JSON.parse(p.featuresAr);
-        if (p.ramOptions) parsedRamOptions = JSON.parse(p.ramOptions);
-        if (p.storageOptions) parsedStorageOptions = JSON.parse(p.storageOptions);
-        if (p.warrantyOptions) parsedWarrantyOptions = JSON.parse(p.warrantyOptions);
-      } catch {}
-
-      const formattedVariants = p.variants.map((v) => {
-        let opt = {};
-        try {
-          opt = JSON.parse(v.options || '{}');
-        } catch {}
-        return { ...v, options: opt };
-      });
-
-      return {
-        ...p,
-        category: cat?.name || p.categoryId,
-        categorySlug: cat?.slug || p.categoryId,
-        categoryNameAr: cat?.nameAr,
-        images: parsedImages,
-        specs: parsedSpecs,
-        specsAr: parsedSpecsAr,
-        features: parsedFeatures,
-        featuresAr: parsedFeaturesAr,
-        ramOptions: parsedRamOptions,
-        storageOptions: parsedStorageOptions,
-        warrantyOptions: parsedWarrantyOptions,
-        variants: formattedVariants,
-        monthlyInstallment: p.monthlyValu
-          ? {
-              valuPrice: p.monthlyValu,
-              amanPrice: p.monthlyAman || p.monthlyValu,
-              months: 24,
-            }
-          : undefined,
-      };
-    });
+    const parsedProducts = products.map(serializeProduct);
 
     if (isDefaultQuery) {
       cachedCatalog = {
@@ -200,13 +139,13 @@ export async function GET(request: Request) {
       };
     }
 
-    return NextResponse.json(
+    return apiSuccess(
       {
-        success: true,
         count: parsedProducts.length,
         categories,
         products: parsedProducts,
       },
+      200,
       {
         headers: {
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
@@ -215,15 +154,14 @@ export async function GET(request: Request) {
     );
   } catch (error: any) {
     if (cachedCatalog) {
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         count: cachedCatalog.products.length,
         categories: cachedCatalog.categories,
         products: cachedCatalog.products,
         cached: true,
       });
     }
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -233,34 +171,61 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const created = await prisma.product.create({
-      data: {
-        id: body.id || 'prod-' + Date.now(),
-        name: body.name,
-        nameAr: body.nameAr || body.name,
-        brand: body.brand,
-        categoryId: body.categorySlug || body.categoryId,
-        subCategory: body.subCategory || null,
-        sku: body.sku || 'SKU-' + Date.now(),
-        price: Number(body.price),
-        oldPrice: body.oldPrice ? Number(body.oldPrice) : null,
-        discountPercentage: body.discountPercentage ? Number(body.discountPercentage) : null,
-        inStock: body.inStock ?? true,
-        stockCount: body.stockCount || 10,
-        thumbnail: body.thumbnail,
-        images: JSON.stringify(body.images || [body.thumbnail]),
-        description: body.description || '',
-        descriptionAr: body.descriptionAr || '',
-        specs: JSON.stringify(body.specs || {}),
-        specsAr: body.specsAr ? JSON.stringify(body.specsAr) : null,
+
+    if (!body.name || !body.price || !body.categoryId) {
+      return apiError('Product name, price, and category are required.', 400);
+    }
+
+    // Verify category exists
+    const category = await prisma.category.findFirst({
+      where: {
+        OR: [{ id: body.categoryId }, { slug: body.categoryId }],
       },
     });
 
-    // Invalidate catalog memory cache
+    if (!category) {
+      return apiError('Selected category does not exist.', 400);
+    }
+
+    const priceNum = Number(body.price);
+    const oldPriceNum = body.oldPrice ? Number(body.oldPrice) : null;
+    const discount = oldPriceNum && oldPriceNum > priceNum
+      ? Math.round(((oldPriceNum - priceNum) / oldPriceNum) * 100)
+      : null;
+
+    const created = await prisma.product.create({
+      data: {
+        id: body.id || 'prod-' + Date.now(),
+        name: body.name.trim(),
+        nameAr: body.nameAr?.trim() || body.name.trim(),
+        brand: body.brand?.trim() || 'General',
+        categoryId: category.id,
+        sku: body.sku?.trim().toUpperCase() || 'SKU-' + Date.now(),
+        price: new Prisma.Decimal(priceNum),
+        oldPrice: oldPriceNum ? new Prisma.Decimal(oldPriceNum) : null,
+        discountPercentage: discount,
+        inStock: body.inStock ?? true,
+        stockCount: Number(body.stockCount) || 10,
+        thumbnail: body.thumbnail || '/images/products/placeholder.jpg',
+        images: Array.isArray(body.images) ? body.images : [body.thumbnail || '/images/products/placeholder.jpg'],
+        description: body.description || '',
+        descriptionAr: body.descriptionAr || '',
+        specs: typeof body.specs === 'object' && body.specs !== null ? body.specs : {},
+        specsAr: typeof body.specsAr === 'object' && body.specsAr !== null ? body.specsAr : null,
+        features: Array.isArray(body.features) ? body.features : null,
+        featuresAr: Array.isArray(body.featuresAr) ? body.featuresAr : null,
+      },
+      include: {
+        category: true,
+        variants: true,
+      },
+    });
+
     cachedCatalog = null;
 
-    return NextResponse.json({ success: true, product: created }, { status: 201 });
+    return apiSuccess({ product: serializeProduct(created) }, 201);
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return handleApiError(error);
   }
 }
+

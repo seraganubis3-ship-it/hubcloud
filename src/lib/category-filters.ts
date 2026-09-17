@@ -138,8 +138,9 @@ export async function getCategoryFiltersData(idOrSlugRaw: string): Promise<Categ
 
     for (const p of products) {
       // Prices
-      if (p.price < minPrice) minPrice = p.price;
-      if (p.price > maxPrice) maxPrice = p.price;
+      const numericPrice = Number(p.price || 0);
+      if (numericPrice < minPrice) minPrice = numericPrice;
+      if (numericPrice > maxPrice) maxPrice = numericPrice;
 
       // Brands
       if (p.brand) {
@@ -152,9 +153,13 @@ export async function getCategoryFiltersData(idOrSlugRaw: string): Promise<Categ
 
       // Specs fallback
       let specsObj: Record<string, string> = {};
-      try {
-        specsObj = JSON.parse(p.specs || '{}');
-      } catch {}
+      if (typeof p.specs === 'object' && p.specs !== null) {
+        specsObj = p.specs as Record<string, string>;
+      } else if (typeof p.specs === 'string') {
+        try {
+          specsObj = JSON.parse(p.specs);
+        } catch {}
+      }
 
       // Attribute Values from relation
       const mappedAttrIds = new Set<string>();

@@ -291,9 +291,13 @@ async function main() {
 
   for (const p of products) {
     let specsObj: Record<string, string> = {};
-    try {
-      specsObj = JSON.parse(p.specs || '{}');
-    } catch {}
+    if (typeof p.specs === 'object' && p.specs !== null) {
+      specsObj = p.specs as Record<string, string>;
+    } else if (typeof p.specs === 'string') {
+      try {
+        specsObj = JSON.parse(p.specs);
+      } catch {}
+    }
 
     // Check RAM
     const ramVal = specsObj['RAM'] || specsObj['Memory'] || specsObj['ذاكرة'];

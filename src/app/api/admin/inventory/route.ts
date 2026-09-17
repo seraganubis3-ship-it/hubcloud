@@ -82,9 +82,10 @@ export async function GET(request: Request) {
 
       return {
         ...p,
+        price: Number(p.price || 0),
         category: p.category?.name || 'Hardware',
         categorySlug: (p as any).categoryId || 'hardware',
-        costPrice: (p as any).costPrice || 0,
+        costPrice: Number((p as any).costPrice || 0),
         isLowStock: status === 'lowStock',
         isOutOfStock: status === 'outOfStock',
         transactions: p.inventoryTransactions || [],
@@ -92,7 +93,7 @@ export async function GET(request: Request) {
       };
     });
 
-    const totalValuation = formatted.reduce((sum, p) => sum + (p.price || 0) * (p.stockCount || 0), 0);
+    const totalValuation = formatted.reduce((sum, p) => sum + (Number(p.price) || 0) * (p.stockCount || 0), 0);
     const totalUnits = formatted.reduce((sum, p) => sum + (p.stockCount || 0), 0);
 
     return NextResponse.json({

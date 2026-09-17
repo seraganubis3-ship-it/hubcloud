@@ -7,6 +7,55 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --------------------------------------------------
+// Enums
+// --------------------------------------------------
+
+enum Role {
+  customer
+  admin
+}
+
+enum ProductStatus {
+  active
+  draft
+  archived
+}
+
+enum OrderStatus {
+  pending
+  processing
+  shipped
+  delivered
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  cash_on_delivery
+  failed
+  refunded
+}
+
+enum InventoryReason {
+  restock
+  order_created
+  order_cancelled
+  adjustment
+  damage
+  return_restock
+}
+
+enum VariantStatus {
+  active
+  inactive
+}
+
+// --------------------------------------------------
+// Models
+// --------------------------------------------------
+
 // 1. Single-Level Category Model
 model Category {
   id                 String              @id @default(cuid())
@@ -48,10 +97,10 @@ model Attribute {
   id                  String                  @id @default(cuid())
   name                String
   nameAr              String
-  slug                String                  @unique // e.g. "ram", "processor", "gpu", "screen_size"
-  type                String                  @default("select") // text, number, select, multiselect, boolean, color, unit_number
-  unit                String?                 // e.g. "GB", "GHz", "inch", "Hz", "kg"
-  options             String?                 // JSON array of available options e.g. ["8 GB", "16 GB", "32 GB"]
+  slug                String                  @unique
+  type                String                  @default("select")
+  unit                String?
+  options             Json?
   groupId             String
   group               AttributeGroup          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   categoryAssignments CategoryAttribute[]
@@ -69,11 +118,11 @@ model CategoryAttribute {
   attribute              Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   isRequired             Boolean   @default(false)
   displayOrder           Int       @default(0)
-  isFilterable           Boolean   @default(true) // Exposed as dynamic storefront catalog filter!
+  isFilterable           Boolean   @default(true)
   isSearchable           Boolean   @default(true)
   isComparable           Boolean   @default(true)
   isVisibleOnProductPage Boolean   @default(true)
-  isVariantOption        Boolean   @default(false) // Whether used for variant creation (e.g. Color/Storage)
+  isVariantOption        Boolean   @default(false)
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 
@@ -87,14 +136,13 @@ model Product {
   nameAr                String
   brand                 String
   categoryId            String
-  category              Category                @relation(fields: [categoryId], references: [slug])
-  subCategory           String?
+  category              Category                @relation(fields: [categoryId], references: [id])
   sku                   String                  @unique
   barcode               String?
-  price                 Float
-  oldPrice              Float?
-  costPrice             Float?
-  compareAtPrice        Float?
+  price                 Decimal                 @db.Decimal(12, 2)
+  oldPrice              Decimal?                @db.Decimal(12, 2)
+  costPrice             Decimal?                @db.Decimal(12, 2)
+  compareAtPrice        Decimal?                @db.Decimal(12, 2)
   discountPercentage    Int?
   inStock               Boolean                 @default(true)
   stockCount            Int                     @default(10)
@@ -102,26 +150,23 @@ model Product {
   trackInventory        Boolean                 @default(true)
   allowBackorders       Boolean                 @default(false)
   shipsWithin           String                  @default("Ships within 24 hours")
-  shipsWithinAr         String                  @default("يتم الشحن خلال 24 ساعة")
+  shipsWithinAr         String                  @default("??? ????? ???? 24 ????")
   isNew                 Boolean                 @default(false)
   isBestSeller          Boolean                 @default(false)
   isDeal                Boolean                 @default(false)
   dealEndsIn            String?
-  status                String                  @default("active") // active, draft, scheduled, archived
+  status                ProductStatus           @default(active)
   weight                Float?
   thumbnail             String
-  images                String                  @default("[]") // JSON array
+  images                Json                    @default("[]")
   description           String
   descriptionAr         String
-  specs                 String                  // JSON key-value
-  specsAr               String?                 // JSON key-value
-  features              String?                 // JSON array
-  featuresAr            String?                 // JSON array
-  ramOptions            String?                 // JSON array
-  storageOptions        String?                 // JSON array
-  warrantyOptions       String?                 // JSON array
-  monthlyValu           Float?
-  monthlyAman           Float?
+  specs                 Json                    @default("{}")
+  specsAr               Json?
+  features              Json?
+  featuresAr            Json?
+  monthlyValue          Decimal?                @db.Decimal(12, 2)
+  monthlyAman           Decimal?                @db.Decimal(12, 2)
   seoTitle              String?
   metaDescription       String?
   searchKeywords        String?
@@ -143,121 +188,129 @@ model ProductAttributeValue {
   textValue   String?
   numberValue Float?
   booleanValue Boolean?
-  jsonValue   String?   // For multiselect or color values
+  jsonValue   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@unique([productId, attributeId])
 }
 
-// 7. Product Variants (Color, Storage, Spec combinations)
+// 7. Product Variants
 model ProductVariant {
   id                    String                 @id @default(cuid())
   productId             String
   product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
   sku                   String                 @unique
   barcode               String?
-  price                 Float
-  oldPrice              Float?
-  costPrice             Float?
+  price                 Decimal                @db.Decimal(12, 2)
+  oldPrice              Decimal?               @db.Decimal(12, 2)
+  costPrice             Decimal?               @db.Decimal(12, 2)
   stockCount            Int                    @default(0)
   image                 String?
-  status                String                 @default("active") // active, inactive
-  options               String                 // JSON e.g. {"RAM":"32 GB","Storage":"1 TB SSD"}
+  status                VariantStatus          @default(active)
+  options               Json
   inventoryTransactions InventoryTransaction[]
+  orderItems            OrderItem[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
+
+  @@unique([productId, sku])
 }
 
-// 8. Inventory Transactions (Stock History Log)
+// 8. Inventory Transactions
 model InventoryTransaction {
   id            String          @id @default(cuid())
   productId     String
   product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   variantId     String?
   variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  quantityDelta Int             // e.g. +20 or -2
+  quantityDelta Int
   previousStock Int
   newStock      Int
-  reason        String          // Restock, Order #1234, Adjustment, Damage
+  reason        InventoryReason
   createdById   String?
   createdByName String?
   createdAt     DateTime        @default(now())
 }
 
-// 9. Audit Logs (Immutable Administrative Activity Timeline)
+// 9. Audit Logs
 model AuditLog {
   id         String   @id @default(cuid())
   userId     String?
   userName   String?
   userEmail  String?
-  action     String   // PRODUCT_CREATE, PRODUCT_UPDATE, STOCK_ADJUST, CATEGORY_UPDATE, etc.
-  entityType String   // Product, Category, Attribute, Inventory, User
+  action     String
+  entityType String
   entityId   String
-  details    String   // JSON formatted payload
+  details    Json
   ipAddress  String?
   createdAt  DateTime @default(now())
 }
 
+// 10. Order Model
 model Order {
-  id            String      @id
-  createdAt     DateTime    @default(now())
+  id            String        @id
+  createdAt     DateTime      @default(now())
   customerName  String
   customerEmail String
   customerPhone String
   city          String
   address       String
   postalCode    String?
-  isCorporate   Boolean     @default(false)
+  isCorporate   Boolean       @default(false)
   companyName   String?
   taxNumber     String?
   paymentMethod String
-  paymentStatus String      @default("pending")
-  orderStatus   String      @default("processing")
-  subtotal      Float
-  shipping      Float
-  vat           Float
-  discount      Float       @default(0)
-  total         Float
+  paymentStatus PaymentStatus @default(pending)
+  orderStatus   OrderStatus   @default(processing)
+  subtotal      Decimal       @db.Decimal(12, 2)
+  shipping      Decimal       @db.Decimal(12, 2)
+  vat           Decimal       @db.Decimal(12, 2)
+  discount      Decimal       @default(0) @db.Decimal(12, 2)
+  total         Decimal       @db.Decimal(12, 2)
   notes         String?
   items         OrderItem[]
 }
 
+// 11. Order Items
 model OrderItem {
-  id               String   @id @default(cuid())
-  orderId          String
-  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId        String
-  productName      String
-  productNameAr    String?
-  quantity         Int
-  unitPrice        Float
-  totalPrice       Float
-  selectedRam      String?
-  selectedStorage  String?
-  selectedWarranty String?
+  id              String          @id @default(cuid())
+  orderId         String
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String
+  variantId       String?
+  variant         ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productName     String
+  productNameAr   String?
+  quantity        Int
+  unitPrice       Decimal         @db.Decimal(12, 2)
+  totalPrice      Decimal         @db.Decimal(12, 2)
+  selectedOptions Json?
 }
 
+// 12. Coupon Model
 model Coupon {
   id             String   @id @default(cuid())
   code           String   @unique
-  discountAmount Float
-  minSpend       Float    @default(0)
+  discountAmount Decimal  @db.Decimal(12, 2)
+  minSpend       Decimal  @default(0) @db.Decimal(12, 2)
   isActive       Boolean  @default(true)
 }
 
+// 13. User Model
 model User {
   id        String         @id @default(cuid())
   name      String
   email     String         @unique
   phone     String
   password  String?
-  role      String         @default("customer")
+  role      Role           @default(customer)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
   addresses SavedAddress[]
 }
 
+// 14. Saved Addresses
 model SavedAddress {
   id             String   @id @default(cuid())
   userId         String
