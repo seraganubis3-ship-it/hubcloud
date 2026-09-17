@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from './Logo';
@@ -51,6 +51,15 @@ export const MainHeader: React.FC = () => {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 8);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Exact 5 Categories for Search Dropdown
   const categories = [
@@ -72,7 +81,11 @@ export const MainHeader: React.FC = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+    <header
+      className={`bg-white/95 backdrop-blur-md border-b sticky top-0 w-full transition-all duration-200 ${
+        mobileMenuOpen ? 'z-[60]' : 'z-40'
+      } ${isScrolled ? 'shadow-md border-gray-200' : 'shadow-xs border-gray-100'}`}
+    >
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-3 sm:gap-4 lg:gap-8">
         {/* Animated Mobile Burger Button */}
         <button

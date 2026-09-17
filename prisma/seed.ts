@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { SEED_CATEGORIES, SEED_PRODUCTS } from '../src/lib/seed-data';
 
 const prisma = new PrismaClient();
@@ -105,13 +106,20 @@ async function main() {
 
   // 4. Default Admin & User
   console.log('👤 Seeding Users...');
+  const adminPasswordHash = await bcrypt.hash('admin123', 10);
   await prisma.user.upsert({
-    where: { email: 'admin@hubcloud.eg' },
-    update: { role: 'admin' },
+    where: { email: 'admin@hubcloud.com' },
+    update: {
+      role: 'admin',
+      password: adminPasswordHash,
+      name: 'Hub Cloud Admin',
+      phone: '01060777895',
+    },
     create: {
       name: 'Hub Cloud Admin',
-      email: 'admin@hubcloud.eg',
-      phone: '01000000000',
+      email: 'admin@hubcloud.com',
+      phone: '01060777895',
+      password: adminPasswordHash,
       role: 'admin',
     },
   });

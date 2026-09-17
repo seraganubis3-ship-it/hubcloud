@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { SEED_CATEGORIES, SEED_PRODUCTS } from '@/lib/seed-data';
+import { hashPassword } from '@/lib/auth';
 import crypto from 'crypto';
 
 function verifySeedSecret(provided: string | null, expected: string | undefined): boolean {
@@ -123,13 +124,20 @@ async function handleSeed(request: Request) {
     }
 
     // 4. Default Admin & Customer
+    const adminPasswordHash = await hashPassword('admin123');
     await prisma.user.upsert({
-      where: { email: 'admin@hubcloud.eg' },
-      update: { role: 'admin' },
+      where: { email: 'admin@hubcloud.com' },
+      update: {
+        role: 'admin',
+        password: adminPasswordHash,
+        name: 'Hub Cloud Admin',
+        phone: '01060777895',
+      },
       create: {
         name: 'Hub Cloud Admin',
-        email: 'admin@hubcloud.eg',
-        phone: '01000000000',
+        email: 'admin@hubcloud.com',
+        phone: '01060777895',
+        password: adminPasswordHash,
         role: 'admin',
       },
     });
