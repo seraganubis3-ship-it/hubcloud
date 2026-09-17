@@ -46,7 +46,7 @@ export const BestSellersSection: React.FC = () => {
         </div>
 
         {/* Carousel Container with Left/Right Navigation Arrows on the Sides */}
-        <div className="relative group">
+        <div className="relative">
           {/* Left Arrow Button */}
           <button
             onClick={() => scroll('left')}

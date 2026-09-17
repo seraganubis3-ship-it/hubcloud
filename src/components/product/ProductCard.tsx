@@ -17,6 +17,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
   const { isRtl, formatPrice, addToCart, toggleWishlist, isInWishlist, toggleCompare, isInCompare } = useStore();
   const [showQuickView, setShowQuickView] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [isCardHovered, setIsCardHovered] = useState(false);
 
   const isWishlisted = isInWishlist(product.id);
   const isCompared = isInCompare(product.id);
@@ -65,7 +66,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
 
   if (viewMode === 'list') {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-500/80 hover:shadow-md transition-all duration-300 p-4 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 group">
+      <div className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-500/80 hover:shadow-md transition-all duration-300 p-4 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 group/card">
         {/* Thumbnail & Badges */}
         <div className="relative w-full sm:w-52 h-52 flex-shrink-0 bg-slate-50/60 border border-slate-100 rounded-xl overflow-hidden flex items-center justify-center p-4">
           {product.discountPercentage && (
@@ -83,7 +84,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
               src={product.thumbnail || product.images[0]}
               alt={title}
               fill
-              className="object-contain p-2 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+              className="object-contain p-2 mix-blend-multiply group-hover/card:scale-105 transition-transform duration-300"
             />
           </Link>
         </div>
@@ -104,7 +105,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
           </div>
 
           <Link href={`/products/${product.id}`}>
-            <h3 className="text-[15px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+            <h3 className="text-[15px] font-bold text-gray-900 group-hover/card:text-blue-600 transition-colors line-clamp-2 leading-snug">
               {title}
             </h3>
           </Link>
@@ -196,7 +197,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
 
   // Grid View
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-500/80 hover:shadow-lg transition-all duration-300 p-2.5 sm:p-4 flex flex-col justify-between group relative">
+    <div
+      onMouseEnter={() => setIsCardHovered(true)}
+      onMouseLeave={() => setIsCardHovered(false)}
+      className="bg-white rounded-2xl border border-slate-200/90 hover:border-blue-500/80 hover:shadow-lg transition-all duration-300 p-2.5 sm:p-4 flex flex-col justify-between relative"
+    >
       {/* Product Image Area - Fixed 1:1 Aspect Ratio with Consistent Framing */}
       <div className="relative w-full aspect-square bg-slate-50/60 rounded-xl border border-slate-100/80 overflow-hidden flex items-center justify-center mb-2.5 sm:mb-3 p-3 sm:p-4">
         {/* Discount Badge */}
@@ -218,10 +223,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
           </span>
         )}
 
-        {/* Quick Action Overlay Icons (Accessible on touch and desktop hover) */}
-        <div className={`absolute top-2 right-2 rtl:right-auto rtl:left-2 flex flex-col gap-1.5 z-20 transition-opacity duration-200 ${
-          isWishlisted || isCompared ? 'opacity-100' : 'opacity-80 sm:opacity-0 sm:group-hover:opacity-100'
-        }`}>
+        {/* Quick Action Overlay Icons (Visible ONLY when hovering directly over THIS specific card) */}
+        <div
+          className={`absolute top-2 right-2 rtl:right-auto rtl:left-2 flex flex-col gap-1.5 z-20 transition-all duration-200 ${
+            isCardHovered
+              ? 'opacity-100 pointer-events-auto translate-y-0'
+              : 'opacity-0 pointer-events-none -translate-y-1'
+          }`}
+        >
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -267,7 +276,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
             alt={title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 20vw"
-            className="object-contain p-1.5 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+            className={`object-contain p-1.5 mix-blend-multiply transition-transform duration-300 ${
+              isCardHovered ? 'scale-105' : 'scale-100'
+            }`}
           />
         </Link>
       </div>
@@ -296,7 +307,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
 
           {/* Title */}
           <Link href={`/products/${product.id}`}>
-            <h3 className="text-[13px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug min-h-[36px]">
+            <h3 className={`text-[13px] font-bold transition-colors line-clamp-2 leading-snug min-h-[36px] ${
+              isCardHovered ? 'text-blue-600' : 'text-gray-900'
+            }`}>
               {title}
             </h3>
           </Link>
