@@ -26,6 +26,7 @@ export interface SessionUser {
   email: string;
   role: string;
   name: string;
+  adminRoleId?: string | null;
 }
 
 /**
@@ -53,6 +54,7 @@ export async function verifySessionToken(token: string): Promise<SessionUser | n
       email: String(payload.email),
       role: String(payload.role),
       name: String(payload.name || ''),
+      adminRoleId: payload.adminRoleId ? String(payload.adminRoleId) : null,
     };
   } catch (error) {
     return null;

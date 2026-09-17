@@ -39,6 +39,7 @@ export async function POST(request: Request) {
         email: true,
         phone: true,
         role: true,
+        adminRoleId: true,
         password: true,
         createdAt: true,
       },
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
       email: user.email,
       role: user.role,
       name: user.name,
+      adminRoleId: user.adminRoleId,
     });
 
     const response = NextResponse.json({

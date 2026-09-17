@@ -45,17 +45,29 @@ export async function PUT(
 
   try {
     const { id } = params;
-    const updates = await request.json();
+    const body = await request.json();
 
-    // Prevent passing invalid fields directly into Prisma
-    delete updates.id;
-    delete updates.subCategory;
-    delete updates.createdAt;
-    delete updates.updatedAt;
+    // Whitelist allowed fields to prevent mass assignment vulnerabilities
+    const safeData: any = {};
+    if (body.name !== undefined) safeData.name = String(body.name).trim();
+    if (body.nameAr !== undefined) safeData.nameAr = String(body.nameAr).trim();
+    if (body.brand !== undefined) safeData.brand = String(body.brand).trim();
+    if (body.price !== undefined) safeData.price = Number(body.price);
+    if (body.oldPrice !== undefined) safeData.oldPrice = body.oldPrice ? Number(body.oldPrice) : null;
+    if (body.inStock !== undefined) safeData.inStock = Boolean(body.inStock);
+    if (body.stockCount !== undefined) safeData.stockCount = Number(body.stockCount);
+    if (body.isBestSeller !== undefined) safeData.isBestSeller = Boolean(body.isBestSeller);
+    if (body.isDeal !== undefined) safeData.isDeal = Boolean(body.isDeal);
+    if (body.isNew !== undefined) safeData.isNew = Boolean(body.isNew);
+    if (body.description !== undefined) safeData.description = String(body.description);
+    if (body.descriptionAr !== undefined) safeData.descriptionAr = String(body.descriptionAr);
+    if (body.thumbnail !== undefined) safeData.thumbnail = String(body.thumbnail);
+    if (body.images !== undefined && Array.isArray(body.images)) safeData.images = body.images;
+    if (body.specs !== undefined) safeData.specs = body.specs;
 
     const updated = await prisma.product.update({
       where: { id },
-      data: updates,
+      data: safeData,
       include: {
         category: true,
         variants: true,

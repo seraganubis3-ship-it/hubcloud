@@ -210,10 +210,22 @@ export async function POST(request: Request) {
         });
       }
 
-      const shipping = data.shipping ?? 0;
-      const discount = data.discount ?? 0;
+      // 2. Validate coupon server-side — never trust client-supplied discount amounts
+      let discount = 0;
+      const couponCode = rawBody.couponCode ? String(rawBody.couponCode).trim().toUpperCase() : null;
+      if (couponCode) {
+        const coupon = await tx.coupon.findUnique({ where: { code: couponCode } });
+        if (coupon && coupon.isActive && calculatedSubtotal >= Number(coupon.minSpend)) {
+          discount = Number(coupon.discountAmount);
+        }
+        // If coupon not found or invalid, discount stays 0 — not an error, just ignored
+      }
+
+      // Shipping: 0 for now (extend with real shipping calculator by city if needed)
+      const shipping = 0;
       const vat = Number((calculatedSubtotal * 0.14).toFixed(2)); // Standard 14% VAT in Egypt
       const total = Math.max(0, Number((calculatedSubtotal + shipping + vat - discount).toFixed(2)));
+
 
       const createdOrder = await tx.order.create({
         data: {

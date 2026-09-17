@@ -80,8 +80,7 @@ export function isManagerUser(user: { email?: string; role?: string; isManager?:
   if (user.isManager === true) return true;
   if (user.adminRoleId === 'manager') return true;
   if (user.email && user.email.toLowerCase() === 'admin@hubcloud.eg') return true;
-  // Default fallback: if role is admin and no adminRoleId set, default to manager
-  if (!user.adminRoleId) return true;
+  // Deny manager permissions by default if no explicit manager assignment
   return false;
 }
 

@@ -50,7 +50,7 @@ export async function requireManager(request: Request): Promise<AuthResult> {
   const auth = await requireAdmin(request);
   if (!auth.authorized) return auth;
 
-  if (!isManagerUser({ email: auth.user.email, role: auth.user.role as any })) {
+  if (!isManagerUser({ email: auth.user.email, role: auth.user.role as any, adminRoleId: auth.user.adminRoleId || undefined })) {
     return {
       authorized: false,
       response: NextResponse.json(

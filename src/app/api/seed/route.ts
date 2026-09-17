@@ -1,13 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { SEED_CATEGORIES, SEED_PRODUCTS } from '@/lib/seed-data';
+import crypto from 'crypto';
 
-export async function GET(request: Request) {
+function verifySeedSecret(provided: string | null, expected: string | undefined): boolean {
+  if (!provided || !expected) return false;
+  try {
+    const provBuf = Buffer.from(provided);
+    const expBuf = Buffer.from(expected);
+    if (provBuf.length !== expBuf.length) return false;
+    return crypto.timingSafeEqual(provBuf, expBuf);
+  } catch {
+    return false;
+  }
+}
+
+async function handleSeed(request: Request) {
   // Strictly prevent unauthorized database re-seeding in all environments
   const seedSecret = request.headers.get('x-seed-secret');
   const expectedSecret = process.env.SEED_SECRET;
 
-  if (!expectedSecret || seedSecret !== expectedSecret) {
+  if (!verifySeedSecret(seedSecret, expectedSecret)) {
     return NextResponse.json(
       { success: false, error: 'Unauthorized: Valid x-seed-secret header matching SEED_SECRET environment variable is required.' },
       { status: 403 }
@@ -151,4 +164,12 @@ export async function GET(request: Request) {
     console.error('Seeding error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
+}
+
+export async function POST(request: Request) {
+  return handleSeed(request);
+}
+
+export async function GET(request: Request) {
+  return handleSeed(request);
 }

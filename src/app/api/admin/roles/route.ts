@@ -21,6 +21,7 @@ export async function GET(request: Request) {
         email: true,
         phone: true,
         role: true,
+        adminRoleId: true,
         createdAt: true,
       },
       orderBy: { createdAt: 'asc' },
@@ -54,6 +55,17 @@ export async function POST(request: Request) {
       where: { id: userId },
       data: {
         role: role || 'admin',
+        adminRoleId: adminRoleId !== undefined ? adminRoleId : undefined,
+      },
+      // Explicit projection — never return password hash in response
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        adminRoleId: true,
+        createdAt: true,
       },
     });
 

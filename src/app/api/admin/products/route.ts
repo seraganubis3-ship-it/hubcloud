@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
 import { adminProductsCache } from '@/lib/server-cache';
 import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
-import { serializeProduct } from '@/lib/product-helpers';
+import { serializeAdminProduct } from '@/lib/product-helpers';
 import { Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     ]);
 
     const formattedProducts = products.map((p) => {
-      const serialized = serializeProduct(p);
+      const serialized = serializeAdminProduct(p);
       return {
         ...serialized,
         variantCount: p.variants.length,
@@ -272,7 +272,7 @@ export async function POST(request: Request) {
 
     adminProductsCache.clear();
 
-    return apiSuccess({ product: serializeProduct(created) }, 201);
+    return apiSuccess({ product: serializeAdminProduct(created) }, 201);
   } catch (error: any) {
     return handleApiError(error);
   }

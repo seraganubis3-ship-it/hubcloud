@@ -35,6 +35,10 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  // Require a valid session — no anonymous access to order details
+  const auth = await requireSession(request);
+  if (!auth.authorized) return auth.response;
+
   try {
     const { id } = params;
     const order = await prisma.order.findUnique({
@@ -46,6 +50,14 @@ export async function GET(
 
     if (!order) {
       return apiError('Order not found', 404);
+    }
+
+    // Admin can view any order; customers can only view their own
+    const isAdmin = auth.user.role === 'admin';
+    const isOwner = order.customerEmail.toLowerCase() === auth.user.email.toLowerCase();
+
+    if (!isAdmin && !isOwner) {
+      return apiError('You do not have permission to view this order', 403);
     }
 
     return apiSuccess({ order: serializeOrder(order) });

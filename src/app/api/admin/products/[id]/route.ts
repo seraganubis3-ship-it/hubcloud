@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
 import { adminProductsCache, categoryFiltersCache } from '@/lib/server-cache';
 import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
-import { serializeProduct } from '@/lib/product-helpers';
+import { serializeAdminProduct } from '@/lib/product-helpers';
 import { Prisma } from '@prisma/client';
 
 export async function GET(
@@ -38,7 +38,7 @@ export async function GET(
       return apiError('Product not found', 404);
     }
 
-    return apiSuccess({ product: serializeProduct(product) });
+    return apiSuccess({ product: serializeAdminProduct(product) });
   } catch (error: any) {
     return handleApiError(error);
   }
@@ -244,7 +244,7 @@ export async function PUT(
     adminProductsCache.clear();
     categoryFiltersCache.delete(updated.categoryId.toLowerCase());
 
-    return apiSuccess({ product: serializeProduct(updated) });
+    return apiSuccess({ product: serializeAdminProduct(updated) });
   } catch (error: any) {
     return handleApiError(error);
   }
