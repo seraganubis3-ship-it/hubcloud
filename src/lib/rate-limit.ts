@@ -86,3 +86,69 @@ export function checkRateLimit(
     resetSeconds,
   };
 }
+
+/**
+ * Distributed Rate Limiting via Upstash Redis REST API.
+ * When UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are set in .env,
+ * rate limiting is globally shared across all serverless/edge instances on Vercel.
+ * If not configured, gracefully falls back to the in-memory sliding window.
+ */
+export async function checkDistributedRateLimit(
+  ip: string,
+  action: string,
+  maxAllowed: number,
+  windowSeconds: number
+): Promise<{ success: boolean; remaining: number; resetSeconds: number }> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token) {
+    // Graceful fallback to in-memory sliding window
+    return checkRateLimit(ip, action, maxAllowed, windowSeconds);
+  }
+
+  const key = `ratelimit:${action}:${ip}`;
+  try {
+    const res = await fetch(`${url}/pipeline`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([
+        ['INCR', key],
+        ['TTL', key],
+      ]),
+      cache: 'no-store',
+    });
+
+    const results = await res.json();
+    const count = Number(results[0]?.result || 1);
+    let ttl = Number(results[1]?.result || windowSeconds);
+
+    if (ttl === -1 || count === 1) {
+      await fetch(`${url}/expire/${key}/${windowSeconds}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      ttl = windowSeconds;
+    }
+
+    if (count > maxAllowed) {
+      return {
+        success: false,
+        remaining: 0,
+        resetSeconds: Math.max(1, ttl),
+      };
+    }
+
+    return {
+      success: true,
+      remaining: Math.max(0, maxAllowed - count),
+      resetSeconds: Math.max(1, ttl),
+    };
+  } catch (err) {
+    console.warn('[RateLimit] Upstash Redis call failed, using in-memory fallback:', err);
+    return checkRateLimit(ip, action, maxAllowed, windowSeconds);
+  }
+}

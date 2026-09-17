@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { hashPassword, signSessionToken, SESSION_COOKIE_OPTIONS } from '@/lib/auth';
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { checkDistributedRateLimit, getClientIp } from '@/lib/rate-limit';
 import { sanitizeString, sanitizeEmail, sanitizePhone } from '@/lib/sanitize';
 
 export async function POST(request: Request) {
   try {
-    // 1. Rate Limiting: Max 5 registrations per hour per IP
+    // 1. Rate Limiting: Max 5 registrations per hour per IP (Distributed / Serverless safe)
     const ip = getClientIp(request);
-    const rateCheck = checkRateLimit(ip, 'auth:register', 5, 3600);
+    const rateCheck = await checkDistributedRateLimit(ip, 'auth:register', 5, 3600);
     if (!rateCheck.success) {
       return NextResponse.json(
         {

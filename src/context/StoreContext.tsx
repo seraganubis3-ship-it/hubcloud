@@ -672,8 +672,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try { localStorage.setItem('hubcloud_orders', JSON.stringify(next)); } catch (e) {}
   };
 
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const subtotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
+  const cartCount = cart.reduce((acc: number, item: CartItem) => acc + item.quantity, 0);
+  const subtotal = cart.reduce((acc: number, item: CartItem) => acc + item.totalPrice, 0);
   const shipping = cart.length > 0 ? 75 : 0;
   const vat = 0;
   const discount = appliedCoupon ? discountAmount : 0;
