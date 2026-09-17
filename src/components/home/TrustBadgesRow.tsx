@@ -4,7 +4,7 @@ import React from 'react';
 import { useStore } from '@/context/StoreContext';
 import { Truck, ShieldCheck, Award, CreditCard, Headphones, RotateCcw } from 'lucide-react';
 
-export const TrustBadgesRow: React.FC = () => {
+export const TrustBadgesRow: React.FC = React.memo(function TrustBadgesRow() {
   const { isRtl } = useStore();
 
   const badges = [
@@ -88,4 +88,4 @@ export const TrustBadgesRow: React.FC = () => {
       </div>
     </div>
   );
-};
+});

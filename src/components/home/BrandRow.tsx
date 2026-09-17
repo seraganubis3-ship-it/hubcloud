@@ -20,7 +20,7 @@ import {
   APCLogo,
 } from '@/components/ui/BrandLogos';
 
-export const BrandRow: React.FC = () => {
+export const BrandRow: React.FC = React.memo(function BrandRow() {
   const { isRtl } = useStore();
 
   const partners = [
@@ -96,4 +96,4 @@ export const BrandRow: React.FC = () => {
       `}</style>
     </section>
   );
-};
+});

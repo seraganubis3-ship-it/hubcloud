@@ -38,7 +38,7 @@ const clientsRow2: ClientItem[] = [
   { name: 'الأهلي للتمويل العقاري', nameEn: 'Al Ahly Mortgage Finance', logo: '/images/clients/ahly_mortgage.png', sectorAr: 'تمويل وائتمان', sectorEn: 'Mortgage Finance' },
 ];
 
-export const OurClientsSection: React.FC = () => {
+export const OurClientsSection: React.FC = React.memo(function OurClientsSection() {
   const { isRtl } = useStore();
 
   const marquee1 = [...clientsRow1, ...clientsRow1];
@@ -154,4 +154,4 @@ export const OurClientsSection: React.FC = () => {
       `}</style>
     </section>
   );
-};
+});

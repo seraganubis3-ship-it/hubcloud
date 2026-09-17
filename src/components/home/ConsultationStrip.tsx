@@ -4,7 +4,7 @@ import React from 'react';
 import { useStore } from '@/context/StoreContext';
 import { Briefcase, MessageCircle, ShieldCheck, FileCheck } from 'lucide-react';
 
-export const ConsultationStrip: React.FC = () => {
+export const ConsultationStrip: React.FC = React.memo(function ConsultationStrip() {
   const { isRtl } = useStore();
 
   return (
@@ -65,4 +65,4 @@ export const ConsultationStrip: React.FC = () => {
       </div>
     </section>
   );
-};
+});

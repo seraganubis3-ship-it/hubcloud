@@ -4,7 +4,7 @@ import React from 'react';
 import { useStore } from '@/context/StoreContext';
 import { ValuBadge, AmanBadge, MeezaBadge, FawryBadge } from '@/components/ui/PaymentBadges';
 
-export const InstallmentStrip: React.FC = () => {
+export const InstallmentStrip: React.FC = React.memo(function InstallmentStrip() {
   const { isRtl } = useStore();
 
   return (
@@ -25,4 +25,4 @@ export const InstallmentStrip: React.FC = () => {
       </div>
     </div>
   );
-};
+});

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useStore } from '@/context/StoreContext';
 import { ArrowRight, Cpu, Scan, Server } from 'lucide-react';
 
-export const PromoTriBanner: React.FC = () => {
+export const PromoTriBanner: React.FC = React.memo(function PromoTriBanner() {
   const { isRtl } = useStore();
 
   const banners = [
@@ -118,4 +118,4 @@ export const PromoTriBanner: React.FC = () => {
       </div>
     </section>
   );
-};
+});

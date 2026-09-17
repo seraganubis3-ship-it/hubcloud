@@ -13,7 +13,7 @@ interface ProductCardProps {
   viewMode?: 'grid' | 'list';
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'grid' }) => {
+export const ProductCard: React.FC<ProductCardProps> = React.memo(function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
   const { isRtl, formatPrice, addToCart, toggleWishlist, isInWishlist, toggleCompare, isInCompare } = useStore();
   const [showQuickView, setShowQuickView] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
@@ -378,4 +378,4 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'g
       )}
     </div>
   );
-};
+});

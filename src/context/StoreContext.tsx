@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { Product, Category, CartItem, User, UserRole, SavedAddress, Order, SocialLinkConfig } from '@/types';
 
 export const DEFAULT_SOCIAL_LINKS: SocialLinkConfig[] = [
@@ -163,7 +163,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const updateSocialLinks = (links: SocialLinkConfig[]) => {
+  const updateSocialLinks = useCallback((links: SocialLinkConfig[]) => {
     setSocialLinks(links);
     try {
       localStorage.setItem('hubcloud_social_links', JSON.stringify(links));
@@ -174,14 +174,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
 
   // Live Catalog State from DB
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCatalogLoading, setIsCatalogLoading] = useState(true);
 
-  const refreshCatalog = async (force = false) => {
+  const refreshCatalog = useCallback(async (force = false) => {
     const now = Date.now();
     if (!force && lastCatalogFetchTime > 0 && now - lastCatalogFetchTime < 15000) {
       return;
@@ -217,7 +217,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     })();
 
     return activeCatalogPromise;
-  };
+  }, []);
 
   // User & Auth State
   const [currentUser, setCurrentUserState] = useState<User | null>(null);
@@ -348,7 +348,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, [wishlist]);
 
-  const setLanguage = (lang: 'en' | 'ar') => {
+  const setLanguage = useCallback((lang: 'en' | 'ar') => {
     setLanguageState(lang);
     try {
       localStorage.setItem('hubcloud_lang', lang);
@@ -357,24 +357,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
 
-  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+  const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
     }, 3500);
-  };
+  }, []);
 
-  const formatPrice = (priceInEgp: number) => {
+  const formatPrice = useCallback((priceInEgp: number) => {
     const formatted = Math.round(priceInEgp || 0).toLocaleString('en-US');
     if (language === 'ar') {
       return `${formatted} ج.م`;
     }
     return `EGP ${formatted}`;
-  };
+  }, [language]);
 
-  const addToCart = (
+  const addToCart = useCallback((
     product: Product,
     quantity = 1,
     options?: { ram?: string; storage?: string; warranty?: string; variantId?: string; selectedOptions?: Record<string, any>; unitPrice?: number }
@@ -418,14 +418,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       language === 'ar' ? `تمت إضافة "${product.nameAr || product.name}" إلى سلة المشتريات!` : `Added "${product.name}" to your cart!`,
       'success'
     );
-  };
+  }, [language, showToast]);
 
-  const removeFromCart = (cartItemId: string) => {
+  const removeFromCart = useCallback((cartItemId: string) => {
     setCart(prev => prev.filter(item => item.id !== cartItemId));
     showToast(language === 'ar' ? 'تم حذف المنتج من السلة' : 'Item removed from cart', 'info');
-  };
+  }, [language, showToast]);
 
-  const updateQuantity = (cartItemId: string, quantity: number) => {
+  const updateQuantity = useCallback((cartItemId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(cartItemId);
       return;
@@ -442,14 +442,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return item;
       })
     );
-  };
+  }, [removeFromCart]);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCart([]);
     showToast(language === 'ar' ? 'تم إفراغ سلة المشتريات' : 'Cart cleared', 'info');
-  };
+  }, [language, showToast]);
 
-  const toggleWishlist = (productId: string) => {
+  const toggleWishlist = useCallback((productId: string) => {
     setWishlist(prev => {
       const exists = prev.includes(productId);
       if (exists) {
@@ -460,11 +460,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return [...prev, productId];
       }
     });
-  };
+  }, [language, showToast]);
 
-  const isInWishlist = (productId: string) => wishlist.includes(productId);
+  const isInWishlist = useCallback((productId: string) => wishlist.includes(productId), [wishlist]);
 
-  const toggleCompare = (productId: string) => {
+  const toggleCompare = useCallback((productId: string) => {
     setCompareList(prev => {
       const exists = prev.includes(productId);
       if (exists) {
@@ -479,11 +479,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return [...prev, productId];
       }
     });
-  };
+  }, [language, showToast]);
 
-  const isInCompare = (productId: string) => compareList.includes(productId);
+  const isInCompare = useCallback((productId: string) => compareList.includes(productId), [compareList]);
 
-  const applyCoupon = async (code: string): Promise<boolean> => {
+  const applyCoupon = useCallback(async (code: string): Promise<boolean> => {
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) return false;
 
@@ -522,16 +522,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       );
       return false;
     }
-  };
+  }, [cart, language, showToast]);
 
-  const removeCoupon = () => {
+  const removeCoupon = useCallback(() => {
     setAppliedCoupon(null);
     setDiscountAmount(0);
     showToast(language === 'ar' ? 'تم إلغاء كود الخصم' : 'Coupon removed', 'info');
-  };
+  }, [language, showToast]);
 
   // User & Auth Handlers
-  const setCurrentUser = (user: User | null) => {
+  const setCurrentUser = useCallback((user: User | null) => {
     setCurrentUserState(user);
     if (user) {
       try {
@@ -544,9 +544,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       try { localStorage.removeItem('hubcloud_user'); } catch (e) {}
       setSavedAddresses([]);
     }
-  };
+  }, []);
 
-  const login = (email: string, role: UserRole = 'customer', userObj?: User): boolean => {
+  const login = useCallback((email: string, role: UserRole = 'customer', userObj?: User): boolean => {
     const userToSet: User = userObj || {
       id: 'usr-' + Date.now(),
       name: email.split('@')[0],
@@ -558,9 +558,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(userToSet);
     showToast(language === 'ar' ? `مرحباً بك، ${userToSet.name}` : `Welcome, ${userToSet.name}`, 'success');
     return true;
-  };
+  }, [language, setCurrentUser, showToast]);
 
-  const register = (userData: Omit<User, 'id' | 'createdAt'> & { id?: string }): boolean => {
+  const register = useCallback((userData: Omit<User, 'id' | 'createdAt'> & { id?: string }): boolean => {
     const newUser: User = {
       ...userData,
       id: userData.id || ('usr-' + Date.now()),
@@ -583,65 +583,76 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {}
     showToast(language === 'ar' ? 'تم إنشاء الحساب بنجاح، أهلاً بك في هاب كلاود!' : 'Account created successfully!', 'success');
     return true;
-  };
+  }, [language, setCurrentUser, showToast]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     setCurrentUser(null);
     setSavedAddresses([]);
     showToast(language === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out successfully', 'info');
-  };
+  }, [language, setCurrentUser, showToast]);
 
-  const updateProfile = (updated: Partial<User>) => {
-    if (!currentUser) return;
-    const next = { ...currentUser, ...updated };
-    setCurrentUser(next);
+  const updateProfile = useCallback((updated: Partial<User>) => {
+    setCurrentUserState(prevUser => {
+      if (!prevUser) return null;
+      const next = { ...prevUser, ...updated };
+      try { localStorage.setItem('hubcloud_user', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
     showToast(language === 'ar' ? 'تم تحديث بيانات الحساب بنجاح' : 'Profile updated successfully', 'success');
-  };
+  }, [language, showToast]);
 
-  const addAddress = (addr: Omit<SavedAddress, 'id'>) => {
+  const addAddress = useCallback((addr: Omit<SavedAddress, 'id'>) => {
     const newAddr: SavedAddress = { ...addr, id: 'addr-' + Date.now() };
-    const next = [newAddr, ...savedAddresses];
-    setSavedAddresses(next);
-    try {
-      const key = currentUser ? `hubcloud_addresses_${currentUser.id}` : 'hubcloud_addresses_guest';
-      localStorage.setItem(key, JSON.stringify(next));
-    } catch (e) {}
+    setSavedAddresses(prev => {
+      const next = [newAddr, ...prev];
+      try {
+        const key = currentUser ? `hubcloud_addresses_${currentUser.id}` : 'hubcloud_addresses_guest';
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
     showToast(language === 'ar' ? 'تمت إضافة العنوان الجديد' : 'Address added successfully', 'success');
-  };
+  }, [currentUser, language, showToast]);
 
-  const removeAddress = (id: string) => {
-    const next = savedAddresses.filter(a => a.id !== id);
-    setSavedAddresses(next);
-    try {
-      const key = currentUser ? `hubcloud_addresses_${currentUser.id}` : 'hubcloud_addresses_guest';
-      localStorage.setItem(key, JSON.stringify(next));
-    } catch (e) {}
+  const removeAddress = useCallback((id: string) => {
+    setSavedAddresses(prev => {
+      const next = prev.filter(a => a.id !== id);
+      try {
+        const key = currentUser ? `hubcloud_addresses_${currentUser.id}` : 'hubcloud_addresses_guest';
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
     showToast(language === 'ar' ? 'تم حذف العنوان' : 'Address deleted', 'info');
-  };
+  }, [currentUser, language, showToast]);
 
-  const setDefaultAddress = (id: string) => {
-    const next = savedAddresses.map(a => ({ ...a, isDefault: a.id === id }));
-    setSavedAddresses(next);
-    try {
-      const key = currentUser ? `hubcloud_addresses_${currentUser.id}` : 'hubcloud_addresses_guest';
-      localStorage.setItem(key, JSON.stringify(next));
-    } catch (e) {}
-  };
+  const setDefaultAddress = useCallback((id: string) => {
+    setSavedAddresses(prev => {
+      const next = prev.map(a => ({ ...a, isDefault: a.id === id }));
+      try {
+        const key = currentUser ? `hubcloud_addresses_${currentUser.id}` : 'hubcloud_addresses_guest';
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  }, [currentUser]);
 
-  const createOrder = (orderData: Omit<Order, 'id' | 'date'> & { id?: string }): Order => {
+  const createOrder = useCallback((orderData: Omit<Order, 'id' | 'date'> & { id?: string }): Order => {
     const newOrder: Order = {
       ...orderData,
       id: orderData.id || ('HC-' + Math.floor(100000 + Math.random() * 900000)),
       date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
     };
-    const next = [newOrder, ...orders];
-    setOrders(next);
-    try { localStorage.setItem('hubcloud_orders', JSON.stringify(next)); } catch (e) {}
+    setOrders(prev => {
+      const next = [newOrder, ...prev];
+      try { localStorage.setItem('hubcloud_orders', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
     return newOrder;
-  };
+  }, []);
 
-  const updateOrderStatus = async (orderId: string, status: Order['orderStatus']) => {
+  const updateOrderStatus = useCallback(async (orderId: string, status: Order['orderStatus']) => {
     try {
       await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
@@ -651,13 +662,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.warn('API update orderStatus failed:', e);
     }
-    const next = orders.map(o => o.id === orderId ? { ...o, orderStatus: status } : o);
-    setOrders(next);
-    try { localStorage.setItem('hubcloud_orders', JSON.stringify(next)); } catch (e) {}
+    setOrders(prev => {
+      const next = prev.map(o => o.id === orderId ? { ...o, orderStatus: status } : o);
+      try { localStorage.setItem('hubcloud_orders', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
     showToast(language === 'ar' ? `تم تحديث حالة الطلب #${orderId}` : `Order #${orderId} status updated`, 'success');
-  };
+  }, [language, showToast]);
 
-  const updatePaymentStatus = async (orderId: string, status: Order['paymentStatus']) => {
+  const updatePaymentStatus = useCallback(async (orderId: string, status: Order['paymentStatus']) => {
     try {
       await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
@@ -667,13 +680,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.warn('API update paymentStatus failed:', e);
     }
-    const next = orders.map(o => o.id === orderId ? { ...o, paymentStatus: status } : o);
-    setOrders(next);
-    try { localStorage.setItem('hubcloud_orders', JSON.stringify(next)); } catch (e) {}
-  };
+    setOrders(prev => {
+      const next = prev.map(o => o.id === orderId ? { ...o, paymentStatus: status } : o);
+      try { localStorage.setItem('hubcloud_orders', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  }, []);
 
-  const cartCount = cart.reduce((acc: number, item: CartItem) => acc + item.quantity, 0);
-  const subtotal = cart.reduce((acc: number, item: CartItem) => acc + item.totalPrice, 0);
+  const cartCount = useMemo(() => cart.reduce((acc: number, item: CartItem) => acc + item.quantity, 0), [cart]);
+  const subtotal = useMemo(() => cart.reduce((acc: number, item: CartItem) => acc + item.totalPrice, 0), [cart]);
   const shipping = cart.length > 0 ? 75 : 0;
   const vat = 0;
   const discount = appliedCoupon ? discountAmount : 0;
@@ -681,64 +696,116 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const isRtl = language === 'ar';
 
+  const contextValue = useMemo(() => ({
+    products,
+    categories,
+    isCatalogLoading,
+    refreshCatalog,
+    language,
+    setLanguage,
+    isRtl,
+    currency,
+    formatPrice,
+    currentUser,
+    setCurrentUser,
+    login,
+    register,
+    logout,
+    updateProfile,
+    savedAddresses,
+    addAddress,
+    removeAddress,
+    setDefaultAddress,
+    orders,
+    createOrder,
+    updateOrderStatus,
+    updatePaymentStatus,
+    cart,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    cartCount,
+    subtotal,
+    shipping,
+    vat,
+    discount,
+    total,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
+    wishlist,
+    toggleWishlist,
+    isInWishlist,
+    wishlistCount: wishlist.length,
+    compareList,
+    toggleCompare,
+    isInCompare,
+    compareCount: compareList.length,
+    searchQuery,
+    setSearchQuery,
+    activeCategory,
+    setActiveCategory,
+    toast,
+    showToast,
+    socialLinks,
+    updateSocialLinks
+  }), [
+    products,
+    categories,
+    isCatalogLoading,
+    refreshCatalog,
+    language,
+    setLanguage,
+    isRtl,
+    currency,
+    formatPrice,
+    currentUser,
+    setCurrentUser,
+    login,
+    register,
+    logout,
+    updateProfile,
+    savedAddresses,
+    addAddress,
+    removeAddress,
+    setDefaultAddress,
+    orders,
+    createOrder,
+    updateOrderStatus,
+    updatePaymentStatus,
+    cart,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    cartCount,
+    subtotal,
+    shipping,
+    vat,
+    discount,
+    total,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
+    wishlist,
+    toggleWishlist,
+    isInWishlist,
+    compareList,
+    toggleCompare,
+    isInCompare,
+    searchQuery,
+    setSearchQuery,
+    activeCategory,
+    setActiveCategory,
+    toast,
+    showToast,
+    socialLinks,
+    updateSocialLinks
+  ]);
+
   return (
-    <StoreContext.Provider
-      value={{
-        products,
-        categories,
-        isCatalogLoading,
-        refreshCatalog,
-        language,
-        setLanguage,
-        isRtl,
-        currency,
-        formatPrice,
-        currentUser,
-        setCurrentUser,
-        login,
-        register,
-        logout,
-        updateProfile,
-        savedAddresses,
-        addAddress,
-        removeAddress,
-        setDefaultAddress,
-        orders,
-        createOrder,
-        updateOrderStatus,
-        updatePaymentStatus,
-        cart,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        cartCount,
-        subtotal,
-        shipping,
-        vat,
-        discount,
-        total,
-        appliedCoupon,
-        applyCoupon,
-        removeCoupon,
-        wishlist,
-        toggleWishlist,
-        isInWishlist,
-        wishlistCount: wishlist.length,
-        compareList,
-        toggleCompare,
-        isInCompare,
-        compareCount: compareList.length,
-        searchQuery,
-        setSearchQuery,
-        activeCategory,
-        setActiveCategory,
-        toast,
-        showToast,
-        socialLinks,
-        updateSocialLinks
-      }}
-    >
+    <StoreContext.Provider value={contextValue}>
       {children}
     </StoreContext.Provider>
   );
