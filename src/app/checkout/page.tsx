@@ -354,9 +354,8 @@ export default function CheckoutPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="bg-white p-1.5 rounded-xl border border-gray-200 shadow-2xs h-10 sm:h-11 w-24 sm:w-28 flex items-center justify-center shrink-0 self-end sm:self-auto">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/images/payments/instapay.png" alt="InstaPay" className="h-full w-auto object-contain" />
+                    <div className="bg-white p-1.5 rounded-xl border border-gray-200 shadow-2xs h-10 sm:h-11 w-24 sm:w-28 flex items-center justify-center shrink-0 self-end sm:self-auto relative">
+                      <Image src="/images/payments/instapay.png" alt="InstaPay" width={100} height={36} className="h-full w-auto object-contain" />
                     </div>
                   </label>
 
@@ -439,9 +438,8 @@ export default function CheckoutPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="bg-white p-1 rounded-xl border border-gray-200 shadow-2xs h-10 sm:h-11 w-24 sm:w-28 flex items-center justify-center shrink-0 self-end sm:self-auto">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/images/payments/vodafone-cash.png" alt="Vodafone Cash" className="h-full w-auto object-contain" />
+                    <div className="bg-white p-1 rounded-xl border border-gray-200 shadow-2xs h-10 sm:h-11 w-24 sm:w-28 flex items-center justify-center shrink-0 self-end sm:self-auto relative">
+                      <Image src="/images/payments/vodafone-cash.png" alt="Vodafone Cash" width={100} height={36} className="h-full w-auto object-contain" />
                     </div>
                   </label>
 

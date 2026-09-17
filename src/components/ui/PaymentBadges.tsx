@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 interface PaymentBadgeProps {
   className?: string;
@@ -123,10 +124,11 @@ export const VodafoneCashBadge: React.FC<PaymentBadgeProps> = ({
 
   return (
     <div className={`inline-flex items-center justify-center select-none ${containerClass} ${heightClass} ${className}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src="/images/payments/vodafone-cash.png"
         alt="Vodafone Cash"
+        width={80}
+        height={32}
         className="h-full w-auto object-contain drop-shadow-sm transition-transform hover:scale-105"
       />
     </div>
@@ -149,10 +151,11 @@ export const InstaPayBadge: React.FC<PaymentBadgeProps> = ({
 
   return (
     <div className={`inline-flex items-center justify-center select-none ${containerClass} ${heightClass} ${className}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={imgSrc}
         alt="InstaPay"
+        width={80}
+        height={32}
         className="h-full w-auto object-contain drop-shadow-sm"
       />
     </div>
