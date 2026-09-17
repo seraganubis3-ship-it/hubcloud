@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Logo } from './Logo';
 import { useStore } from '@/context/StoreContext';
@@ -12,7 +12,8 @@ import {
   Facebook,
   Instagram,
   Youtube,
-  Linkedin
+  Linkedin,
+  ChevronDown
 } from 'lucide-react';
 import {
   InstaPayBadge,
@@ -37,6 +38,14 @@ const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' 
 
 export const Footer: React.FC = () => {
   const { isRtl, socialLinks } = useStore();
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+
+  const toggleSection = (id: string) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   const enabledSocials = (socialLinks || []).filter(s => s.enabled);
 
@@ -47,15 +56,15 @@ export const Footer: React.FC = () => {
     >
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6">
 
-        {/* Main Footer Grid - Responsive 4 Columns (2 Columns for links on mobile) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-10 pb-5 sm:pb-10 border-b border-white/15">
+        {/* Main Footer Grid - Responsive 4 Columns on Desktop, Accordions on Mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-10 pb-4 sm:pb-10 border-b border-white/15">
 
           {/* Col 1: Brand Info & Socials */}
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-3 sm:space-y-4 pb-4 sm:pb-0 border-b border-white/10 sm:border-0">
             <div className="flex items-center rtl:justify-start ltr:justify-start">
               <Logo variant="white" size="md" />
             </div>
-            <p className="text-[12.5px] sm:text-[13px] text-blue-100/90 leading-relaxed font-normal max-w-sm">
+            <p className="hidden sm:block text-[13px] text-blue-100/90 leading-relaxed font-normal max-w-sm">
               {isRtl
                 ? 'شريكك التكنولوجي المعتمد في مصر. أجهزة لابتوب، كمبيوتر مكتبي، ومعدات شبكات أصلية 100% بضمان محلي ودعم فني متخصص.'
                 : 'Your trusted IT partner in Egypt. Genuine laptops, enterprise hardware, and networking solutions with official warranty and expert support.'}
@@ -168,14 +177,31 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Wrapper for 2-column side-by-side links on mobile, spreading into standard columns on sm+ */}
-          <div className="grid grid-cols-2 sm:contents gap-4 sm:gap-10">
-            {/* Col 2: Shop Categories */}
-            <div className="space-y-2.5 sm:space-y-3.5">
-              <h4 className="text-white font-bold text-[14px] sm:text-[15px] tracking-wide">
-                {isRtl ? 'أقسام المتجر' : 'Shop Categories'}
-              </h4>
-              <ul className="space-y-2 sm:space-y-2.5 text-[12.5px] sm:text-[13px] text-blue-100/90 font-normal">
+          {/* Col 2: Shop Categories (Accordion on Mobile) */}
+          <div className="border-b border-white/10 sm:border-0">
+            {/* Mobile Toggle Button */}
+            <button
+              type="button"
+              onClick={() => toggleSection('shop')}
+              aria-expanded={openSections.shop}
+              className="w-full sm:hidden flex items-center justify-between py-3 text-[14px] font-bold text-white transition-colors hover:text-blue-200 text-start"
+            >
+              <span>{isRtl ? 'أقسام المتجر' : 'Shop Categories'}</span>
+              <ChevronDown
+                className={`w-4 h-4 text-blue-200 transition-transform duration-200 ${
+                  openSections.shop ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {/* Desktop Title */}
+            <h4 className="hidden sm:block text-white font-bold text-[15px] tracking-wide mb-3.5">
+              {isRtl ? 'أقسام المتجر' : 'Shop Categories'}
+            </h4>
+
+            {/* Links Content */}
+            <div className={`${openSections.shop ? 'block pb-3.5' : 'hidden'} sm:block sm:pb-0`}>
+              <ul className="space-y-2.5 text-[13px] text-blue-100/90 font-normal">
                 <li>
                   <Link href="/products" className="hover:text-white transition-colors inline-block">
                     {isRtl ? 'جميع المنتجات' : 'All Products'}
@@ -188,28 +214,48 @@ export const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link href="/category/desktops" className="hover:text-white transition-colors inline-block">
-                    {isRtl ? 'الكمبيوتر المكتبي' : 'Desktops'}
+                    {isRtl ? 'الكمبيوتر المكتبي ومحطات العمل' : 'Desktops & Workstations'}
                   </Link>
                 </li>
                 <li>
                   <Link href="/category/network-device" className="hover:text-white transition-colors inline-block">
-                    {isRtl ? 'أجهزة الشبكات' : 'Network Devices'}
+                    {isRtl ? 'أجهزة وتجهيزات الشبكات' : 'Network Devices & Servers'}
                   </Link>
                 </li>
                 <li>
                   <Link href="/deals" className="hover:text-white transition-colors inline-block">
-                    {isRtl ? 'أقوى العروض' : 'Deals & Offers'}
+                    {isRtl ? 'أقوى العروض والتخفيضات' : "Deals & Special Offers"}
                   </Link>
                 </li>
               </ul>
             </div>
+          </div>
 
-            {/* Col 3: Customer Care & Policies */}
-            <div className="space-y-2.5 sm:space-y-3.5">
-              <h4 className="text-white font-bold text-[14px] sm:text-[15px] tracking-wide">
-                {isRtl ? 'خدمة العملاء' : 'Customer Care'}
-              </h4>
-              <ul className="space-y-2 sm:space-y-2.5 text-[12.5px] sm:text-[13px] text-blue-100/90 font-normal">
+          {/* Col 3: Customer Care & Policies (Accordion on Mobile) */}
+          <div className="border-b border-white/10 sm:border-0">
+            {/* Mobile Toggle Button */}
+            <button
+              type="button"
+              onClick={() => toggleSection('care')}
+              aria-expanded={openSections.care}
+              className="w-full sm:hidden flex items-center justify-between py-3 text-[14px] font-bold text-white transition-colors hover:text-blue-200 text-start"
+            >
+              <span>{isRtl ? 'خدمة العملاء والسياسات' : 'Customer Care & Policies'}</span>
+              <ChevronDown
+                className={`w-4 h-4 text-blue-200 transition-transform duration-200 ${
+                  openSections.care ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {/* Desktop Title */}
+            <h4 className="hidden sm:block text-white font-bold text-[15px] tracking-wide mb-3.5">
+              {isRtl ? 'خدمة العملاء والسياسات' : 'Customer Care & Policies'}
+            </h4>
+
+            {/* Links Content */}
+            <div className={`${openSections.care ? 'block pb-3.5' : 'hidden'} sm:block sm:pb-0`}>
+              <ul className="space-y-2.5 text-[13px] text-blue-100/90 font-normal">
                 <li>
                   <Link href="/about" className="hover:text-white transition-colors inline-block">
                     {isRtl ? 'عن HUB CLOUD' : 'About HUB CLOUD'}
@@ -217,67 +263,87 @@ export const Footer: React.FC = () => {
                 </li>
                 <li>
                   <Link href="/warranty" className="hover:text-white transition-colors inline-block">
-                    {isRtl ? 'الضمان المعتمد' : 'Warranty Policy'}
+                    {isRtl ? 'سياسة الضمان المعتمد' : 'Warranty Policy'}
                   </Link>
                 </li>
                 <li>
                   <Link href="/shipping" className="hover:text-white transition-colors inline-block">
-                    {isRtl ? 'الشحن والتوصيل' : 'Shipping & Delivery'}
+                    {isRtl ? 'الشحن والتوصيل للمحافظات' : 'Shipping & Delivery'}
                   </Link>
                 </li>
                 <li>
                   <Link href="/returns" className="hover:text-white transition-colors inline-block">
-                    {isRtl ? 'الاستبدال والاسترجاع' : 'Returns & Refunds'}
+                    {isRtl ? 'سياسة الاستبدال والاسترجاع' : 'Returns & Refunds'}
                   </Link>
                 </li>
                 <li>
                   <Link href="/faq" className="hover:text-white transition-colors inline-block">
-                    {isRtl ? 'الأسئلة الشائعة' : 'FAQ'}
+                    {isRtl ? 'الأسئلة الأكثر شيوعاً' : 'Frequently Asked Questions'}
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
 
-          {/* Col 4: Contact Us */}
-          <div className="space-y-2.5 sm:space-y-3.5">
-            <h4 className="text-white font-bold text-[14px] sm:text-[15px] tracking-wide">
+          {/* Col 4: Contact Us (Accordion on Mobile) */}
+          <div className="border-b border-white/10 sm:border-0">
+            {/* Mobile Toggle Button */}
+            <button
+              type="button"
+              onClick={() => toggleSection('contact')}
+              aria-expanded={openSections.contact}
+              className="w-full sm:hidden flex items-center justify-between py-3 text-[14px] font-bold text-white transition-colors hover:text-blue-200 text-start"
+            >
+              <span>{isRtl ? 'تواصل معنا ومقر الشركة' : 'Contact Us & Location'}</span>
+              <ChevronDown
+                className={`w-4 h-4 text-blue-200 transition-transform duration-200 ${
+                  openSections.contact ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {/* Desktop Title */}
+            <h4 className="hidden sm:block text-white font-bold text-[15px] tracking-wide mb-3.5">
               {isRtl ? 'تواصل معنا' : 'Contact Us'}
             </h4>
-            <div className="space-y-2 sm:space-y-3 text-[12.5px] sm:text-[13px] text-blue-100/90 font-normal">
-              <div className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-blue-300 flex-shrink-0 mt-0.5" />
-                <span className="leading-snug sm:leading-relaxed">
-                  {isRtl
-                    ? '181 شارع السودان - الدور التاسع - المهندسين، الجيزة، مصر'
-                    : '181 Al Sudan St., 9th Floor, Mohandseen, Giza, Egypt'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-blue-300 flex-shrink-0" />
-                <a
-                  href="tel:+2001060777895"
-                  className="hover:text-white transition-colors font-mono inline-block text-start"
-                  dir="ltr"
-                >
-                  <span dir="ltr" className="inline-block font-mono">010 60 777 895 (+20)</span>
-                </a>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-blue-300 flex-shrink-0" />
-                <a
-                  href="mailto:sales@hubcloud-eg.com"
-                  className="hover:text-white transition-colors font-mono inline-block text-start"
-                  dir="ltr"
-                >
-                  <span dir="ltr" className="inline-block font-mono">sales@hubcloud-eg.com</span>
-                </a>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Clock className="w-4 h-4 text-blue-300 flex-shrink-0" />
-                <span>
-                  {isRtl ? 'السبت - الخميس: 9:00 ص - 9:00 م' : 'Sat - Thu: 9:00 AM - 9:00 PM'}
-                </span>
+
+            {/* Content */}
+            <div className={`${openSections.contact ? 'block pb-3.5' : 'hidden'} sm:block sm:pb-0`}>
+              <div className="space-y-3 text-[13px] text-blue-100/90 font-normal">
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-blue-300 flex-shrink-0 mt-0.5" />
+                  <span className="leading-snug sm:leading-relaxed">
+                    {isRtl
+                      ? '181 شارع السودان - الدور التاسع - المهندسين، الجيزة، مصر'
+                      : '181 Al Sudan St., 9th Floor, Mohandseen, Giza, Egypt'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                  <a
+                    href="tel:+2001060777895"
+                    className="hover:text-white transition-colors font-mono inline-block text-start"
+                    dir="ltr"
+                  >
+                    <span dir="ltr" className="inline-block font-mono">010 60 777 895 (+20)</span>
+                  </a>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                  <a
+                    href="mailto:sales@hubcloud-eg.com"
+                    className="hover:text-white transition-colors font-mono inline-block text-start"
+                    dir="ltr"
+                  >
+                    <span dir="ltr" className="inline-block font-mono">sales@hubcloud-eg.com</span>
+                  </a>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-blue-300 flex-shrink-0" />
+                  <span>
+                    {isRtl ? 'السبت - الخميس: 9:00 ص - 9:00 م' : 'Sat - Thu: 9:00 AM - 9:00 PM'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
