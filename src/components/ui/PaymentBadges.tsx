@@ -117,7 +117,7 @@ export const VodafoneCashBadge: React.FC<PaymentBadgeProps> = ({
   size = 'md',
   variant = 'transparent'
 }) => {
-  const heightClass = size === 'sm' ? 'h-7' : size === 'lg' ? 'h-11' : 'h-10';
+  const heightClass = size === 'sm' ? 'h-7' : size === 'lg' ? 'h-10' : 'h-8';
   const containerClass = variant === 'white'
     ? 'bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs'
     : 'bg-transparent';
@@ -141,7 +141,7 @@ export const InstaPayBadge: React.FC<PaymentBadgeProps> = ({
   size = 'md',
   variant = 'transparent'
 }) => {
-  const heightClass = size === 'sm' ? 'h-6' : size === 'lg' ? 'h-10' : 'h-8';
+  const heightClass = size === 'sm' ? 'h-7' : size === 'lg' ? 'h-10' : 'h-8';
   const containerClass = variant === 'white'
     ? 'bg-white px-2 py-0.5 rounded-lg border border-gray-200 shadow-2xs'
     : 'bg-transparent';
@@ -156,7 +156,7 @@ export const InstaPayBadge: React.FC<PaymentBadgeProps> = ({
         alt="InstaPay"
         width={80}
         height={32}
-        className="h-full w-auto object-contain drop-shadow-sm"
+        className="h-full w-auto object-contain drop-shadow-sm transition-transform hover:scale-105"
       />
     </div>
   );

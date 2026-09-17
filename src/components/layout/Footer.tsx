@@ -17,11 +17,7 @@ import {
 } from 'lucide-react';
 import {
   InstaPayBadge,
-  VodafoneCashBadge,
-  VisaBadge,
-  MastercardBadge,
-  MeezaBadge,
-  ValuBadge
+  VodafoneCashBadge
 } from '@/components/ui/PaymentBadges';
 
 const TikTokIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
@@ -356,17 +352,13 @@ export const Footer: React.FC = () => {
             © {new Date().getFullYear()} HUB CLOUD IT Solutions. {isRtl ? 'جميع الحقوق محفوظة.' : 'All Rights Reserved.'}
           </p>
 
-          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5">
             <span className="text-white/90 font-medium text-[11px] sm:text-[12px] shrink-0">
               {isRtl ? 'طرق الدفع المعتمدة:' : 'Payment Methods:'}
             </span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <VisaBadge size="sm" />
-              <MastercardBadge size="sm" />
-              <MeezaBadge size="sm" />
-              <ValuBadge size="sm" />
-              <InstaPayBadge size="sm" variant="white" />
-              <VodafoneCashBadge size="sm" variant="white" />
+            <div className="flex items-center gap-3">
+              <VodafoneCashBadge size="md" variant="transparent" />
+              <InstaPayBadge size="md" variant="transparent" />
             </div>
           </div>
         </div>
