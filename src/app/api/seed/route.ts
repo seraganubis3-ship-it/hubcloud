@@ -3,13 +3,13 @@ import { prisma } from '@/lib/db';
 import { SEED_CATEGORIES, SEED_PRODUCTS } from '@/lib/seed-data';
 
 export async function GET(request: Request) {
-  // Prevent unauthorized database re-seeding in production
+  // Strictly prevent unauthorized database re-seeding in all environments
   const seedSecret = request.headers.get('x-seed-secret');
-  const expectedSecret = process.env.SEED_SECRET || 'hubcloud-seed-protect-2026';
+  const expectedSecret = process.env.SEED_SECRET;
 
-  if (process.env.NODE_ENV === 'production' && seedSecret !== expectedSecret) {
+  if (!expectedSecret || seedSecret !== expectedSecret) {
     return NextResponse.json(
-      { success: false, error: 'Database seeding is restricted in production. Valid secret key required.' },
+      { success: false, error: 'Unauthorized: Valid x-seed-secret header matching SEED_SECRET environment variable is required.' },
       { status: 403 }
     );
   }

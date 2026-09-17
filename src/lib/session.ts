@@ -2,11 +2,23 @@ import { SignJWT, jwtVerify } from 'jose';
 
 export const AUTH_COOKIE_NAME = 'hubcloud_session';
 
-const JWT_SECRET_STRING =
-  process.env.JWT_SECRET ||
-  'hubcloud-super-secret-jwt-key-2026-production-grade-safe-encryption';
+function getSecretKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'CRITICAL SECURITY ERROR: JWT_SECRET environment variable is required in production.'
+      );
+    }
+    console.warn(
+      '⚠️ [SECURITY WARNING]: JWT_SECRET environment variable is missing. Set JWT_SECRET in your .env file.'
+    );
+    return new TextEncoder().encode('hubcloud-dev-only-secret-must-set-jwt-secret-in-production');
+  }
+  return new TextEncoder().encode(secret);
+}
 
-const secretKey = new TextEncoder().encode(JWT_SECRET_STRING);
+const secretKey = getSecretKey();
 
 export interface SessionUser {
   id?: string;
