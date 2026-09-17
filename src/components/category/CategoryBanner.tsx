@@ -34,6 +34,7 @@ interface CategoryConfig {
   badgeAr: string;
   pillColor: string;
   bannerImage: string;
+  isFullGraphicBanner?: boolean;
   perks: Array<{ en: string; ar: string }>;
   chips: string[];
 }
@@ -50,6 +51,7 @@ const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     badgeAr: 'موزع رسمي معتمد',
     pillColor: 'bg-blue-500/20 text-blue-300 border-blue-400/40',
     bannerImage: '/images/banners/cat_laptops.jpg',
+    isFullGraphicBanner: true,
     perks: [
       { en: 'Official 1-3 Yr Warranty', ar: 'ضمان محلي معتمد حتى 3 سنوات' },
       { en: 'Fast Express Delivery', ar: 'شحن سريع لكافة المحافظات' },
@@ -160,6 +162,59 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
   const title = isRtl ? config.titleAr : config.titleEn;
   const subtitle = isRtl ? config.subtitleAr : config.subtitleEn;
   const badge = isRtl ? config.badgeAr : config.badgeEn;
+
+  if (config.isFullGraphicBanner) {
+    return (
+      <div className="space-y-4 mb-6 sm:mb-8">
+        {/* Glow ambient effect and rounded frame */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/25 via-cyan-500/20 to-blue-700/25 rounded-3xl blur-xl opacity-70 group-hover:opacity-100 transition duration-500 -z-10 pointer-events-none" />
+
+          {/* Main Banner Card with curved edges (انعواج الأطراف / Rounded 3xl) */}
+          <div
+            className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/40 border border-slate-700/60 bg-[#071328] ring-1 ring-white/10 w-full transition-all duration-300 group-hover:shadow-blue-900/30"
+            style={{ aspectRatio: '1024 / 419' }}
+          >
+            <Image
+              src={config.bannerImage}
+              alt={title}
+              fill
+              priority
+              className="object-cover object-center w-full h-full select-none"
+              sizes="(max-width: 1536px) 100vw, 1536px"
+            />
+          </div>
+        </div>
+
+        {/* Quick Filter Tag Chips & Guarantees bar below the banner */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-1">
+          {config.chips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11.5px] font-bold text-slate-500 dark:text-slate-400 me-1">
+                {isRtl ? 'الفئات الأكثر طلباً:' : 'Popular:'}
+              </span>
+              {config.chips.map((chip, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 rounded-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-[11.5px] font-semibold text-slate-700 dark:text-slate-300 shadow-2xs hover:border-hub-blue hover:text-hub-blue hover:scale-105 transition-all cursor-default select-none"
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Trust Guarantee Badges */}
+          <div className="flex items-center gap-3 text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              {isRtl ? 'أجهزة أصلية 100% بضمان محلي معتمد' : '100% Genuine with Official Warranty'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
