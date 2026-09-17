@@ -76,11 +76,14 @@ export const PATH_TO_PERMISSION: Record<string, AdminPermission> = {
  */
 export function isManagerUser(user: { email?: string; role?: string; isManager?: boolean; adminRoleId?: string } | User | null): boolean {
   if (!user || user.role !== 'admin') return false;
-  // If explicitly flagged as manager or has email of system admin or manager role
+  // If explicitly flagged as manager or has manager role
   if (user.isManager === true) return true;
   if (user.adminRoleId === 'manager') return true;
-  if (user.email && user.email.toLowerCase() === 'admin@hubcloud.eg') return true;
-  // Deny manager permissions by default if no explicit manager assignment
+  // If email is the primary administrator
+  const email = (user.email || '').toLowerCase().trim();
+  if (email === 'admin@hubcloud.com' || email === 'admin@hubcloud.eg') return true;
+  // If an admin user does not have a restrictive sub-role assigned, grant full manager access
+  if (!user.adminRoleId) return true;
   return false;
 }
 

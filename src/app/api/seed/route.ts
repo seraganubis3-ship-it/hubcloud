@@ -129,6 +129,7 @@ async function handleSeed(request: Request) {
       where: { email: 'admin@hubcloud.com' },
       update: {
         role: 'admin',
+        adminRoleId: 'manager',
         password: adminPasswordHash,
         name: 'Hub Cloud Admin',
         phone: '01060777895',
@@ -139,6 +140,7 @@ async function handleSeed(request: Request) {
         phone: '01060777895',
         password: adminPasswordHash,
         role: 'admin',
+        adminRoleId: 'manager',
       },
     });
 

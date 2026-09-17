@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { verifyPassword, signSessionToken, SESSION_COOKIE_OPTIONS } from '@/lib/auth';
 import { checkDistributedRateLimit, getClientIp } from '@/lib/rate-limit';
 import { sanitizeEmail } from '@/lib/sanitize';
+import { userSessionCache } from '@/lib/server-cache';
 
 export async function POST(request: Request) {
   try {
@@ -68,6 +69,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // Invalidate any stale user session cache
+    userSessionCache.delete(user.id);
+
     // 4. Issue signed Edge-compatible JWT session token
     const token = await signSessionToken({
       userId: user.id,
@@ -86,6 +90,7 @@ export async function POST(request: Request) {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        adminRoleId: user.adminRoleId,
         createdAt: user.createdAt.toISOString().split('T')[0],
       },
     });

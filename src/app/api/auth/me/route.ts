@@ -26,6 +26,7 @@ export async function GET(request: Request) {
         email: true,
         phone: true,
         role: true,
+        adminRoleId: true,
         createdAt: true,
       },
     });
