@@ -12,7 +12,7 @@ interface LogoProps {
 
 export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', variant = 'default' }) => {
   const isWhite = variant === 'white';
-  const logoSrc = isWhite ? '/images/logo-white.png' : '/images/logo.png';
+  const logoSrc = isWhite ? '/images/logo-white.svg' : '/images/logo.svg';
 
   // Logo aspect ratio is 648x463 ≈ 1.4
   const dimensions = {
