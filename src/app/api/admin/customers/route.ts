@@ -18,12 +18,18 @@ export async function GET(request: Request) {
       },
     });
 
+    // Build O(1) lookup map of orders per customer email instead of O(N*M) loop
+    const ordersByEmail = new Map<string, { count: number; total: number }>();
+    for (const o of orders) {
+      const email = o.customerEmail.toLowerCase().trim();
+      const existing = ordersByEmail.get(email) || { count: 0, total: 0 };
+      existing.count += 1;
+      existing.total += Number(o.total || 0);
+      ordersByEmail.set(email, existing);
+    }
+
     const customers = users.map((u) => {
-      const userOrders = orders.filter(
-        (o) => o.customerEmail.toLowerCase() === u.email.toLowerCase()
-      );
-      const ordersCount = userOrders.length;
-      const totalSpent = userOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+      const stats = ordersByEmail.get(u.email.toLowerCase().trim()) || { count: 0, total: 0 };
 
       return {
         id: u.id,
@@ -31,8 +37,8 @@ export async function GET(request: Request) {
         email: u.email,
         phone: u.phone,
         role: u.role,
-        ordersCount,
-        totalSpent,
+        ordersCount: stats.count,
+        totalSpent: stats.total,
         joinedDate: u.createdAt.toLocaleDateString('en-GB', {
           day: '2-digit',
           month: 'short',

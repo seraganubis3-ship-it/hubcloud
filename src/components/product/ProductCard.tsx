@@ -84,6 +84,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(function Produ
               src={product.thumbnail || product.images[0]}
               alt={title}
               fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
               className="object-contain p-2 mix-blend-multiply group-hover/card:scale-105 transition-transform duration-300"
             />
           </Link>

@@ -176,6 +176,11 @@ model Product {
   inventoryTransactions InventoryTransaction[]
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
+
+  @@index([categoryId, status, isArchived])
+  @@index([isBestSeller])
+  @@index([isDeal])
+  @@index([brand])
 }
 
 // 6. Product Attribute Values (EAV Dynamic Specs)
@@ -270,6 +275,10 @@ model Order {
   total         Decimal       @db.Decimal(12, 2)
   notes         String?
   items         OrderItem[]
+
+  @@index([customerEmail])
+  @@index([orderStatus, paymentStatus])
+  @@index([createdAt])
 }
 
 // 11. Order Items
@@ -299,15 +308,16 @@ model Coupon {
 
 // 13. User Model
 model User {
-  id        String         @id @default(cuid())
-  name      String
-  email     String         @unique
-  phone     String
-  password  String?
-  role      Role           @default(customer)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  addresses SavedAddress[]
+  id          String         @id @default(cuid())
+  name        String
+  email       String         @unique
+  phone       String
+  password    String?
+  role        Role           @default(customer)
+  adminRoleId String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  addresses   SavedAddress[]
 }
 
 // 14. Saved Addresses

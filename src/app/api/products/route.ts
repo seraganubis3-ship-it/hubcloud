@@ -18,6 +18,12 @@ export async function GET(request: Request) {
     const inStockOnly = searchParams.get('inStock') === 'true';
     const sort = searchParams.get('sort') || 'default';
 
+    // Pagination parameters (optional, defaults to returning full set if not specified for backwards compatibility)
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+    const page = pageParam ? Math.max(1, Number(pageParam)) : undefined;
+    const limit = limitParam ? Math.max(1, Math.min(100, Number(limitParam))) : undefined;
+
     // Collect dynamic attribute filters: params starting with "attr_"
     const attributeFilters: Record<string, string[]> = {};
     searchParams.forEach((value, key) => {
@@ -109,10 +115,12 @@ export async function GET(request: Request) {
     else if (sort === 'oldest') orderBy = { createdAt: 'asc' };
     else if (sort === 'bestseller') orderBy = { isBestSeller: 'desc' };
 
-    const [products, categories] = await Promise.all([
+    const [products, totalCount, categories] = await Promise.all([
       prisma.product.findMany({
         where,
         orderBy,
+        skip: page && limit ? (page - 1) * limit : undefined,
+        take: limit,
         include: {
           category: true,
           variants: true,
@@ -123,6 +131,7 @@ export async function GET(request: Request) {
           },
         },
       }),
+      prisma.product.count({ where }),
       prisma.category.findMany({
         where: { isActive: true, isArchived: false },
         orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
@@ -131,7 +140,7 @@ export async function GET(request: Request) {
 
     const parsedProducts = products.map(serializeProduct);
 
-    if (isDefaultQuery) {
+    if (isDefaultQuery && !page && !limit) {
       cachedCatalog = {
         products: parsedProducts,
         categories,
@@ -142,6 +151,10 @@ export async function GET(request: Request) {
     return apiSuccess(
       {
         count: parsedProducts.length,
+        total: totalCount,
+        page: page || 1,
+        limit: limit || totalCount,
+        totalPages: limit ? Math.ceil(totalCount / limit) : 1,
         categories,
         products: parsedProducts,
       },

@@ -12,9 +12,11 @@ type CacheEntry<T> = {
 export class MemoryCache<T = any> {
   private store = new Map<string, CacheEntry<T>>();
   private ttlMs: number;
+  private maxEntries: number;
 
-  constructor(ttlSeconds = 60) {
+  constructor(ttlSeconds = 60, maxEntries = 1000) {
     this.ttlMs = ttlSeconds * 1000;
+    this.maxEntries = maxEntries;
   }
 
   get(key: string): T | null {
@@ -28,6 +30,11 @@ export class MemoryCache<T = any> {
   }
 
   set(key: string, data: T): void {
+    // Evict oldest entry if size limit exceeded
+    if (this.store.size >= this.maxEntries) {
+      const oldestKey = this.store.keys().next().value;
+      if (oldestKey) this.store.delete(oldestKey);
+    }
     this.store.set(key, { data, timestamp: Date.now() });
   }
 
