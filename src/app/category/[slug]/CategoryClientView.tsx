@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { ProductCard } from '@/components/product/ProductCard';
 import { useStore } from '@/context/StoreContext';
 import { CategoryFiltersData } from '@/lib/category-filters';
-import { generateBreadcrumbJsonLd } from '@/lib/seo';
+import { generateBreadcrumbJsonLd, SITE_CONFIG } from '@/lib/seo';
 import { CategoryBanner } from '@/components/category/CategoryBanner';
 import {
   ChevronRight,
@@ -299,6 +299,9 @@ export default function CategoryClientView({
 
   return (
     <div className="py-4 sm:py-6">
+      {/* Canonical URL for category page to prevent duplicate content from query parameters */}
+      <link rel="canonical" href={`${SITE_CONFIG.url}/category/${category.slug}`} />
+
       {/* Schema.org Breadcrumb JSON-LD */}
       <script
         type="application/ld+json"

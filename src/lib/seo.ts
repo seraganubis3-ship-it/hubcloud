@@ -116,7 +116,7 @@ export function generateProductJsonLd(product: Product) {
       url: `${SITE_CONFIG.url}/products/${product.id}`,
       priceCurrency: 'EGP',
       price: product.price,
-      priceValidUntil: '2026-12-31',
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       itemCondition: 'https://schema.org/NewCondition',
       availability: product.inStock
         ? 'https://schema.org/InStock'

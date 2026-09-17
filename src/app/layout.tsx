@@ -48,9 +48,9 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  alternates: {
-    canonical: '/',
-  },
+  // Note: canonical URLs are set per-page via generateMetadata on each route.
+  // Do NOT set a global canonical here — it would override every subpage and
+  // tell Google that all product/category pages are duplicates of the homepage.
   openGraph: {
     type: 'website',
     locale: 'ar_EG',

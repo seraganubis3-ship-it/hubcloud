@@ -9,7 +9,7 @@ import { ProductCardSkeleton } from '@/components/product/ProductCardSkeleton';
 import { TrustBadgesRow } from '@/components/home/TrustBadgesRow';
 import { BrandRow } from '@/components/home/BrandRow';
 import { useStore } from '@/context/StoreContext';
-import { generateBreadcrumbJsonLd } from '@/lib/seo';
+import { generateBreadcrumbJsonLd, SITE_CONFIG } from '@/lib/seo';
 import {
   ChevronRight,
   LayoutGrid,
@@ -194,6 +194,12 @@ function ProductsCatalog() {
 
   return (
     <div className="bg-[#f8fafc] min-h-screen">
+      {/* Dynamic Canonical URL to prevent duplicate content from filter parameter permutations */}
+      <link
+        rel="canonical"
+        href={selectedCategory !== 'all' && currentCategoryObj ? `${SITE_CONFIG.url}/category/${currentCategoryObj.slug}` : `${SITE_CONFIG.url}/products`}
+      />
+
       {/* Schema.org Breadcrumb JSON-LD */}
       <script
         type="application/ld+json"

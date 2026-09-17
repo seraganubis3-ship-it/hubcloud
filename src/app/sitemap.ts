@@ -2,10 +2,14 @@ import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/db';
 import { SITE_CONFIG } from '@/lib/seo';
 
+// Force dynamic evaluation so new products appear in the sitemap immediately
+// without requiring a full redeployment
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_CONFIG.url;
 
-  // Static routes
+  // Static routes — only publicly indexable pages
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -25,12 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'hourly',
       priority: 0.9,
     },
-    {
-      url: `${baseUrl}/cart`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
+    // Note: /cart is intentionally excluded — it's a private transactional route
     {
       url: `${baseUrl}/about`,
       lastModified: new Date(),
@@ -65,8 +64,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const [dbProducts, dbCategories] = await Promise.all([
-      prisma.product.findMany({ select: { id: true, updatedAt: true } }),
-      prisma.category.findMany({ select: { slug: true } }),
+      // Only active, non-archived products in sitemap
+      prisma.product.findMany({
+        where: { status: 'active', isArchived: false },
+        select: { id: true, updatedAt: true },
+      }),
+      // Only active, non-archived categories
+      prisma.category.findMany({
+        where: { isActive: true, isArchived: false },
+        select: { slug: true },
+      }),
     ]);
 
     const productUrls: MetadataRoute.Sitemap = dbProducts.map((p: any) => ({
