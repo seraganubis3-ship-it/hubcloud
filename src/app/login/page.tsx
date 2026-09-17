@@ -3,6 +3,7 @@
 import React, { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Logo } from '@/components/layout/Logo';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
 import {
@@ -196,25 +197,12 @@ function LoginContent() {
 
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <Link href="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-11 h-11 rounded-2xl bg-white border border-gray-200 flex items-center justify-center p-2 shadow-xs group-hover:scale-105 transition-transform">
-              <Image
-                src="/favicon.svg"
-                alt="Hub Cloud Logo"
-                width={28}
-                height={28}
-                className="object-contain"
-              />
-            </div>
-            <div className="text-start">
-              <div className="font-black text-xl tracking-tight text-gray-900">
-                <span>HUB CLOUD</span>
-              </div>
-              <p className="text-[11px] text-gray-500 font-medium">
-                {isRtl ? 'حلول عتاد الشبكات وتكنولوجيا الأعمال' : 'Enterprise Hardware & IT Solutions'}
-              </p>
-            </div>
-          </Link>
+          <div className="flex flex-col items-center justify-center gap-2">
+            <Logo size="lg" />
+            <p className="text-[12px] text-gray-500 font-medium">
+              {isRtl ? 'حلول عتاد الشبكات وتكنولوجيا الأعمال في مصر' : 'Enterprise Hardware & IT Solutions in Egypt'}
+            </p>
+          </div>
         </div>
 
         {/* Main Card */}

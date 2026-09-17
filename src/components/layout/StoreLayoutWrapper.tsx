@@ -8,7 +8,6 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { FloatingChat } from '@/components/layout/FloatingChat';
 import { ToastNotification } from '@/components/ui/ToastNotification';
-import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { TopProgressBar } from '@/components/ui/TopProgressBar';
 import { Suspense } from 'react';
 
@@ -37,13 +36,12 @@ export const StoreLayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ ch
       <MainHeader />
       <Navbar />
       
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className="flex-1">
         {children}
       </main>
 
       <Footer />
       <FloatingChat />
-      <MobileBottomNav />
       <ToastNotification />
     </>
   );

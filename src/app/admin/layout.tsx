@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { Logo } from '@/components/layout/Logo';
 import { useStore } from '@/context/StoreContext';
 import { canAccessPath, isManagerUser, DEFAULT_ADMIN_ROLES } from '@/lib/rbac';
 import {
@@ -130,13 +131,10 @@ export default function AdminLayout({
       {/* Mobile Sticky Top Header (< md) */}
       <div className="md:hidden flex items-center justify-between px-4 py-3.5 bg-slate-900 border-b border-slate-800 z-30 sticky top-0 backdrop-blur-md">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-hub-blue text-white rounded-xl shadow-xs">
-            <Shield className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="font-black text-sm tracking-tight text-white block">HUB CLOUD</span>
-            <span className="text-[9px] uppercase tracking-widest text-blue-400 font-bold block -mt-0.5">Admin Suite</span>
-          </div>
+          <Logo variant="white" size="sm" />
+          <span className="text-[10px] uppercase tracking-widest text-blue-400 font-bold bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-800/40">
+            Admin Suite
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -179,13 +177,10 @@ export default function AdminLayout({
           {/* Logo & Badge */}
           <div className="p-4 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-hub-blue text-white rounded-xl shadow">
-                <Shield className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-black text-[15px] tracking-tight text-white block">HUB CLOUD</span>
-                <span className="text-[10px] uppercase tracking-widest text-blue-400 font-bold">Admin Suite</span>
-              </div>
+              <Logo variant="white" size="sm" />
+              <span className="text-[10px] uppercase tracking-widest text-blue-400 font-bold bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-800/40">
+                Admin
+              </span>
             </div>
 
             {/* Close Button on Mobile Drawer */}
