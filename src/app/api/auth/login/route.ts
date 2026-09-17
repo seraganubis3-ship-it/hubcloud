@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { verifyPassword, hashPassword, signSessionToken, SESSION_COOKIE_OPTIONS } from '@/lib/auth';
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { verifyPassword, signSessionToken, SESSION_COOKIE_OPTIONS } from '@/lib/auth';
+import { checkDistributedRateLimit, getClientIp } from '@/lib/rate-limit';
 import { sanitizeEmail } from '@/lib/sanitize';
 
 export async function POST(request: Request) {
   try {
-    // 1. Rate Limiting: Max 5 failed attempts per 15 minutes per IP
+    // 1. Rate Limiting: Max 8 failed attempts per 15 minutes per IP (Distributed / Serverless safe)
     const ip = getClientIp(request);
-    const rateCheck = checkRateLimit(ip, 'auth:login', 8, 15 * 60);
+    const rateCheck = await checkDistributedRateLimit(ip, 'auth:login', 8, 15 * 60);
     if (!rateCheck.success) {
       return NextResponse.json(
         {
@@ -51,26 +51,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Verify password against bcrypt hash
-    let isValid = user.password ? await verifyPassword(password, user.password) : false;
-
-    // Support auto-upgrading existing legacy seed accounts with null or plain-text password
+    // 3. Verify password against bcrypt hash (strictly reject null or invalid passwords)
     if (!user.password) {
-      isValid = true;
-      const newHash = await hashPassword(password);
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { password: newHash },
-      });
-    } else if (!isValid && user.password === password) {
-      isValid = true;
-      const newHash = await hashPassword(password);
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { password: newHash },
-      });
+      return NextResponse.json(
+        { success: false, error: 'Invalid email or password.' },
+        { status: 401 }
+      );
     }
 
+    const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
       return NextResponse.json(
         { success: false, error: 'Invalid email or password.' },
