@@ -928,12 +928,12 @@ export default function AdminAttributesPage() {
             <p className="text-xs text-slate-300 leading-relaxed">
               {isRtl ? (
                 <>
-                  هل أنت متأكد من رغبتك في حذف قسم <strong className="text-white font-bold">"{groupToDelete.nameAr || groupToDelete.name}"</strong>؟
+                  هل أنت متأكد من رغبتك في حذف قسم <strong className="text-white font-bold">&quot;{groupToDelete.nameAr || groupToDelete.name}&quot;</strong>؟
                   سيتم أيضاً حذف جميع المواصفات ({attributes.filter((a) => a.groupId === groupToDelete.id).length} مواصفة) المرتبطة بهذا القسم تلقائياً.
                 </>
               ) : (
                 <>
-                  Are you sure you want to delete the group <strong className="text-white font-bold">"{groupToDelete.name}"</strong>?
+                  Are you sure you want to delete the group <strong className="text-white font-bold">&quot;{groupToDelete.name}&quot;</strong>?
                   All {attributes.filter((a) => a.groupId === groupToDelete.id).length} specifications belonging to this group will also be permanently deleted.
                 </>
               )}

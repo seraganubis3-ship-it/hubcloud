@@ -62,7 +62,10 @@ function ensureDataDir() {
   }
 }
 
+let memorySmtpConfig: SmtpConfig | null = null;
+
 export function getSmtpConfig(): SmtpConfig {
+  if (memorySmtpConfig) return memorySmtpConfig;
   try {
     ensureDataDir();
     if (fs.existsSync(CONFIG_FILE_PATH)) {
@@ -71,13 +74,12 @@ export function getSmtpConfig(): SmtpConfig {
       return { ...DEFAULT_CONFIG, ...parsed };
     }
   } catch (error) {
-    console.error('Error reading SMTP config:', error);
+    // Readonly filesystem or error, safely fallback to defaults/env
   }
   return DEFAULT_CONFIG;
 }
 
 export function saveSmtpConfig(newConfig: Partial<SmtpConfig>): SmtpConfig {
-  ensureDataDir();
   const current = getSmtpConfig();
 
   // If incoming password is empty or masked '••••••••', keep existing password
@@ -94,7 +96,15 @@ export function saveSmtpConfig(newConfig: Partial<SmtpConfig>): SmtpConfig {
     pass: passwordToSave,
   };
 
-  fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(merged, null, 2), 'utf-8');
+  memorySmtpConfig = merged;
+
+  try {
+    ensureDataDir();
+    fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(merged, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('[email-service] Could not write SMTP config to disk (possibly read-only filesystem). Retaining in memory:', err);
+  }
+
   return merged;
 }
 

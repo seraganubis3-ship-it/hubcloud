@@ -44,9 +44,11 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              // Fonts are now self-hosted via next/font — no external font CDN needed
+              "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https://fonts.gstatic.com",
+              // Fonts served from same origin after next/font self-hosting
+              "font-src 'self' data:",
               "connect-src 'self' https:",
               "frame-ancestors 'self'",
             ].join('; '),

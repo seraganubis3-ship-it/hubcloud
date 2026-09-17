@@ -67,33 +67,6 @@ export default function AccountPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  if (!currentUser) {
-    return (
-      <div className="py-16 min-h-[60vh] flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4 space-y-4">
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
-            <User className="w-8 h-8" />
-          </div>
-          <h2 className="text-2xl font-extrabold text-gray-900">
-            {isRtl ? 'يرجى تسجيل الدخول إلى حسابك' : 'Please Sign In to Your Account'}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {isRtl
-              ? 'سجل الدخول لمتابعة طلباتك السابقة وإدارة عناوين الشحن بكل سهولة.'
-              : 'Sign in to track your orders, invoices, and manage delivery addresses.'}
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-md"
-          >
-            <span>{isRtl ? 'تسجيل الدخول / إنشاء حساب' : 'Sign In / Register'}</span>
-            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   // Filter orders related strictly to current user by verified email
   const userOrders = useMemo<Order[]>(() => {
     if (!currentUser?.email) return [];
@@ -135,6 +108,33 @@ export default function AccountPage() {
         .catch(() => {});
     }
   }, [currentUser]);
+
+  if (!currentUser) {
+    return (
+      <div className="py-16 min-h-[60vh] flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4 space-y-4">
+          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+            <User className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-extrabold text-gray-900">
+            {isRtl ? 'يرجى تسجيل الدخول إلى حسابك' : 'Please Sign In to Your Account'}
+          </h2>
+          <p className="text-sm text-gray-500">
+            {isRtl
+              ? 'سجل الدخول لمتابعة طلباتك السابقة وإدارة عناوين الشحن بكل سهولة.'
+              : 'Sign in to track your orders, invoices, and manage delivery addresses.'}
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-md"
+          >
+            <span>{isRtl ? 'تسجيل الدخول / إنشاء حساب' : 'Sign In / Register'}</span>
+            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
