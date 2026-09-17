@@ -34,8 +34,8 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ["'Inter'", "'Tajawal'", "Segoe UI", "Tahoma", "sans-serif"],
-        arabic: ["'Tajawal'", "Segoe UI", "Tahoma", "sans-serif"],
+        sans: ["var(--font-inter)", "var(--font-tajawal)", "Segoe UI", "Tahoma", "sans-serif"],
+        arabic: ["var(--font-tajawal)", "Segoe UI", "Tahoma", "sans-serif"],
       },
       boxShadow: {
         card: "0 2px 8px -1px rgba(0, 0, 0, 0.06), 0 1px 4px -1px rgba(0, 0, 0, 0.04)",
