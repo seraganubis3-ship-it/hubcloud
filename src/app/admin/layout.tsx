@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/layout/Logo';
 import { useStore } from '@/context/StoreContext';
 import { canAccessPath, isManagerUser, DEFAULT_ADMIN_ROLES } from '@/lib/rbac';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { Order } from '@/types';
 import {
   LayoutDashboard,
   Package,
@@ -45,6 +47,16 @@ export default function AdminLayout({
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  const fetchPendingOrdersCount = useCallback(async () => {
+    const res = await fetch('/api/orders');
+    const data = await res.json();
+    const orders = (data.orders || []) as Order[];
+    return orders.filter(o => o.orderStatus === 'processing').length;
+  }, []);
+
+  const { data: liveCount } = useLiveQuery(fetchPendingOrdersCount, 15000);
+  const pendingOrdersCount = liveCount ?? 0;
 
   const isManager = isManagerUser(currentUser);
   const currentRole = DEFAULT_ADMIN_ROLES.find(r => r.id === currentUser?.adminRoleId) ||
@@ -218,11 +230,19 @@ export default function AdminLayout({
                           <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                           <span className="truncate">{isRtl ? item.nameAr : item.name}</span>
                         </div>
-                        {item.managerOnly && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 ml-1">
-                            Owner
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {item.href === '/admin/orders' && pendingOrdersCount > 0 && (
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold relative">
+                              <span className="absolute inset-0 rounded-full border border-emerald-500 animate-ping opacity-75"></span>
+                              {pendingOrdersCount}
+                            </span>
+                          )}
+                          {item.managerOnly && (
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 ml-1">
+                              Owner
+                            </span>
+                          )}
+                        </div>
                       </Link>
                     );
                   })}

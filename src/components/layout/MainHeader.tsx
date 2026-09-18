@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Logo } from './Logo';
 import { useStore } from '@/context/StoreContext';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Search,
   Shuffle,
@@ -55,6 +56,15 @@ export const MainHeader: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+  const debouncedSearchQuery = useDebounce(localSearchQuery, 250);
+
+  useEffect(() => {
+    if (debouncedSearchQuery !== searchQuery) {
+      setSearchQuery(debouncedSearchQuery);
+    }
+  }, [debouncedSearchQuery, setSearchQuery, searchQuery]);
 
   useEffect(() => {
     setMounted(true);
@@ -171,19 +181,19 @@ export const MainHeader: React.FC = () => {
           <div className="relative flex-1 flex items-center min-w-0">
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={localSearchQuery}
+              onChange={(e) => setLocalSearchQuery(e.target.value)}
               className="w-full px-3 py-2.5 text-[14px] text-gray-800 focus:outline-none bg-transparent relative z-10"
               autoComplete="off"
             />
             {/* Animated Rotating Search Placeholder */}
-            <AnimatedSearchPlaceholder isRtl={isRtl} hasValue={Boolean(searchQuery)} />
+            <AnimatedSearchPlaceholder isRtl={isRtl} hasValue={Boolean(localSearchQuery)} />
 
             {/* Clear Button when user types */}
-            {searchQuery && (
+            {localSearchQuery && (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={() => setLocalSearchQuery('')}
                 className="absolute right-2.5 rtl:right-auto rtl:left-2.5 z-20 text-gray-400 hover:text-gray-600 p-1 transition-colors"
                 aria-label="Clear search"
               >
@@ -376,19 +386,19 @@ export const MainHeader: React.FC = () => {
           <div className="relative flex-1 flex items-center min-w-0">
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={localSearchQuery}
+              onChange={(e) => setLocalSearchQuery(e.target.value)}
               className="w-full px-2.5 py-2.5 text-[13px] bg-transparent focus:outline-none text-gray-800 relative z-10"
               autoComplete="off"
             />
             {/* Animated Rotating Search Placeholder */}
-            <AnimatedSearchPlaceholder isRtl={isRtl} hasValue={Boolean(searchQuery)} />
+            <AnimatedSearchPlaceholder isRtl={isRtl} hasValue={Boolean(localSearchQuery)} />
 
             {/* Clear Button when user types */}
-            {searchQuery && (
+            {localSearchQuery && (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={() => setLocalSearchQuery('')}
                 className="absolute right-2 rtl:right-auto rtl:left-2 z-20 text-gray-400 hover:text-gray-600 p-1"
                 aria-label="Clear search"
               >

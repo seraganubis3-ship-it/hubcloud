@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/StoreContext';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
 import {
   TrendingUp,
   Package,
@@ -64,38 +65,24 @@ interface DbOrder {
 export default function AdminDashboardPage() {
   const { isRtl, formatPrice, showToast, currentUser } = useStore();
 
-  const [stats, setStats] = useState<DbStats | null>(null);
-  const [recentOrders, setRecentOrders] = useState<DbOrder[]>([]);
-  const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'month' | 'quarter'>('month');
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch real statistics and real orders directly from the Database API
   const fetchDashboardData = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/stats');
-      const data = await res.json();
-      if (data.success && data.stats) {
-        setStats(data.stats);
-        if (Array.isArray(data.recentOrders)) {
-          setRecentOrders(data.recentOrders);
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to load database stats:', err);
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
+    const res = await fetch('/api/admin/stats');
+    const data = await res.json();
+    if (data.success && data.stats) {
+      return data;
     }
+    throw new Error('Failed to load stats');
   }, []);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+  const { data, isLoading: loading, isRefreshing, refetch } = useLiveQuery(fetchDashboardData, 20000);
+  const stats = data?.stats as DbStats | null;
+  const recentOrders = (data?.recentOrders as DbOrder[]) || [];
 
   const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchDashboardData();
+    refetch();
     showToast(isRtl ? 'تم تحديث البيانات من قاعدة البيانات!' : 'Data refreshed from Database!', 'info');
   };
 

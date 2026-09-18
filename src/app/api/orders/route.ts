@@ -125,20 +125,26 @@ export async function POST(request: Request) {
 
           // Decrement variant stock
           const newVariantStock = variant.stockCount - item.quantity;
-          await tx.productVariant.update({
+          const updatedVariant = await tx.productVariant.update({
             where: { id: item.variantId },
-            data: { stockCount: newVariantStock },
+            data: { stockCount: { decrement: item.quantity } },
           });
+          if (updatedVariant.stockCount < 0) {
+            throw new Error(`Insufficient stock for "${variant.product.name}" during update.`);
+          }
 
           // Decrement parent product stock
-          const newProductStock = Math.max(0, variant.product.stockCount - item.quantity);
-          await tx.product.update({
+          const newProductStock = variant.product.stockCount - item.quantity;
+          const updatedProduct = await tx.product.update({
             where: { id: variant.productId },
             data: {
-              stockCount: newProductStock,
+              stockCount: { decrement: item.quantity },
               inStock: newProductStock > 0,
             },
           });
+          if (updatedProduct.stockCount < 0) {
+            throw new Error(`Insufficient stock for "${variant.product.name}" during update.`);
+          }
 
           // Record Inventory Transaction
           await tx.inventoryTransaction.create({
@@ -171,13 +177,16 @@ export async function POST(request: Request) {
           }
 
           const newStock = product.stockCount - item.quantity;
-          await tx.product.update({
+          const updatedProduct = await tx.product.update({
             where: { id: item.productId },
             data: {
-              stockCount: newStock,
+              stockCount: { decrement: item.quantity },
               inStock: newStock > 0,
             },
           });
+          if (updatedProduct.stockCount < 0) {
+            throw new Error(`Insufficient stock for "${product.name}" during update.`);
+          }
 
           await tx.inventoryTransaction.create({
             data: {

@@ -197,9 +197,11 @@ export default function CheckoutPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'الاسم الأول' : 'First Name'} *</label>
+                  <label htmlFor="firstName" className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'الاسم الأول' : 'First Name'} *</label>
                   <input
                     type="text"
+                    id="firstName"
+                    autoComplete="given-name"
                     required
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -208,9 +210,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'اسم العائلة' : 'Last Name'} *</label>
+                  <label htmlFor="lastName" className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'اسم العائلة' : 'Last Name'} *</label>
                   <input
                     type="text"
+                    id="lastName"
+                    autoComplete="family-name"
                     required
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -219,9 +223,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'البريد الإلكتروني' : 'Email Address'} *</label>
+                  <label htmlFor="email" className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'البريد الإلكتروني' : 'Email Address'} *</label>
                   <input
                     type="email"
+                    id="email"
+                    autoComplete="email"
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -230,9 +236,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'رقم الموبايل' : 'Phone Number (Egypt)'} *</label>
+                  <label htmlFor="phone" className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'رقم الموبايل' : 'Phone Number (Egypt)'} *</label>
                   <input
                     type="tel"
+                    id="phone"
+                    autoComplete="tel"
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -272,7 +280,7 @@ export default function CheckoutPage() {
                           }));
                           showToast(isRtl ? `تم تطبيق: ${addr.title}` : `Selected: ${addr.title}`, 'info');
                         }}
-                        className="px-2.5 py-1 text-[11px] font-bold bg-white hover:bg-blue-100/80 border border-blue-200 rounded-lg text-blue-800 transition-colors"
+                        className="px-2.5 py-1 text-[11px] font-bold bg-white hover:bg-blue-100/80 border border-blue-200 rounded-lg text-blue-800 transition-colors min-h-[44px]"
                       >
                         📍 {addr.title}
                       </button>
@@ -283,8 +291,10 @@ export default function CheckoutPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'المحافظة / المدينة' : 'City & Governorate'} *</label>
+                  <label htmlFor="city" className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'المحافظة / المدينة' : 'City & Governorate'} *</label>
                   <select
+                    id="city"
+                    autoComplete="address-level2"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     className="w-full px-3.5 py-2 text-[13px] border border-gray-300 rounded-xl focus:outline-none focus:border-hub-blue bg-white"
@@ -300,9 +310,11 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'العنوان بالتفصيل (الشارع، رقم العمارة، الشقة)' : 'Detailed Address'} *</label>
+                  <label htmlFor="address" className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'العنوان بالتفصيل (الشارع، رقم العمارة، الشقة)' : 'Detailed Address'} *</label>
                   <input
                     type="text"
+                    id="address"
+                    autoComplete="street-address"
                     required
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
@@ -331,7 +343,7 @@ export default function CheckoutPage() {
               <div className="space-y-3.5">
                 {/* Option 1: InstaPay */}
                 <div className={`p-3.5 sm:p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'instapay' ? 'border-hub-blue bg-blue-50/20 ring-1 ring-hub-blue/30' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <label className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer">
+                  <label className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer min-h-[44px]">
                     <div className="flex items-center gap-3">
                       <input
                         type="radio"
@@ -415,7 +427,7 @@ export default function CheckoutPage() {
 
                 {/* Option 2: Vodafone Cash */}
                 <div className={`p-3.5 sm:p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'vodafone_cash' ? 'border-hub-blue bg-blue-50/20 ring-1 ring-hub-blue/30' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <label className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer">
+                  <label className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer min-h-[44px]">
                     <div className="flex items-center gap-3">
                       <input
                         type="radio"
@@ -488,7 +500,7 @@ export default function CheckoutPage() {
 
                 {/* Option 3: Cash on Delivery */}
                 <div className={`p-3.5 sm:p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'cod' ? 'border-hub-blue bg-blue-50/20 ring-1 ring-hub-blue/30' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <label className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer">
+                  <label className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer min-h-[44px]">
                     <div className="flex items-center gap-3">
                       <input
                         type="radio"

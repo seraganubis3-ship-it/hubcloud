@@ -15,19 +15,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [productsCount, categoriesCount, orders, recentOrders] = await Promise.all([
+    const [productsCount, categoriesCount, recentOrders, totalOrders, revenueAgg, statusGroups] = await Promise.all([
       prisma.product.count(),
       prisma.category.count(),
-      prisma.order.findMany({
-        select: {
-          id: true,
-          total: true,
-          orderStatus: true,
-          paymentStatus: true,
-          createdAt: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
       prisma.order.findMany({
         take: 6,
         orderBy: { createdAt: 'desc' },
@@ -35,76 +25,82 @@ export async function GET(request: Request) {
           items: true,
         },
       }),
+      prisma.order.count(),
+      prisma.order.aggregate({
+        where: { orderStatus: { not: 'cancelled' } },
+        _sum: { total: true },
+        _count: true,
+      }),
+      prisma.order.groupBy({
+        by: ['orderStatus'],
+        _count: true,
+      })
     ]);
 
-    // Active non-cancelled orders for revenue calculation
-    const nonCancelled = orders.filter((o) => o.orderStatus !== 'cancelled');
-    const totalRevenue = nonCancelled.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
-    const totalOrders = orders.length;
-    const averageOrderValue = nonCancelled.length > 0 ? Math.round(totalRevenue / nonCancelled.length) : 0;
+    const nonCancelledCount = revenueAgg._count;
+    const totalRevenue = Number(revenueAgg._sum.total || 0);
+    const averageOrderValue = nonCancelledCount > 0 ? Math.round(totalRevenue / nonCancelledCount) : 0;
 
-    // Status counts
     const statusBreakdown = {
-      processing: orders.filter((o) => o.orderStatus === 'processing').length,
-      shipped: orders.filter((o) => o.orderStatus === 'shipped').length,
-      delivered: orders.filter((o) => o.orderStatus === 'delivered').length,
-      cancelled: orders.filter((o) => o.orderStatus === 'cancelled').length,
+      processing: statusGroups.find((g) => g.orderStatus === 'processing')?._count || 0,
+      shipped: statusGroups.find((g) => g.orderStatus === 'shipped')?._count || 0,
+      delivered: statusGroups.find((g) => g.orderStatus === 'delivered')?._count || 0,
+      cancelled: statusGroups.find((g) => g.orderStatus === 'cancelled')?._count || 0,
     };
 
-    // Real Monthly breakdown for the past 6 months from database
     const now = new Date();
-    const months = [];
     const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthNamesAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-
+    
+    const months = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       const mIdx = d.getMonth();
       const yr = d.getFullYear();
 
-      // Filter real DB orders belonging to this month and year
-      const mOrders = orders.filter((o) => {
-        const ordDate = new Date(o.createdAt);
-        return ordDate.getMonth() === mIdx && ordDate.getFullYear() === yr;
-      });
-
-      const mRevenue = mOrders
-        .filter((o) => o.orderStatus !== 'cancelled')
-        .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+      const [mCount, mRev] = await Promise.all([
+        prisma.order.count({ where: { createdAt: { gte: d, lt: nextMonth } } }),
+        prisma.order.aggregate({
+          where: { createdAt: { gte: d, lt: nextMonth }, orderStatus: { not: 'cancelled' } },
+          _sum: { total: true },
+        }),
+      ]);
 
       months.push({
-        label: `${monthNamesEn[mIdx]}`,
-        labelAr: `${monthNamesAr[mIdx]}`,
+        label: monthNamesEn[mIdx],
+        labelAr: monthNamesAr[mIdx],
         monthIndex: mIdx,
         year: yr,
-        revenue: mRevenue,
-        orders: mOrders.length,
+        revenue: Number(mRev._sum.total || 0),
+        orders: mCount,
       });
     }
 
-    // Real Quarterly breakdown for the current year from database
-    const quarters = [
-      { label: 'Q1', labelAr: 'الربع 1', months: [0, 1, 2] },
-      { label: 'Q2', labelAr: 'الربع 2', months: [3, 4, 5] },
-      { label: 'Q3', labelAr: 'الربع 3', months: [6, 7, 8] },
-      { label: 'Q4', labelAr: 'الربع 4', months: [9, 10, 11] },
-    ].map((q) => {
-      const qOrders = orders.filter((o) => {
-        const ordDate = new Date(o.createdAt);
-        return ordDate.getFullYear() === now.getFullYear() && q.months.includes(ordDate.getMonth());
-      });
+    const quarters = [];
+    const quartersDefs = [
+      { label: 'Q1', labelAr: 'الربع 1', start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear(), 3, 1) },
+      { label: 'Q2', labelAr: 'الربع 2', start: new Date(now.getFullYear(), 3, 1), end: new Date(now.getFullYear(), 6, 1) },
+      { label: 'Q3', labelAr: 'الربع 3', start: new Date(now.getFullYear(), 6, 1), end: new Date(now.getFullYear(), 9, 1) },
+      { label: 'Q4', labelAr: 'الربع 4', start: new Date(now.getFullYear(), 9, 1), end: new Date(now.getFullYear() + 1, 0, 1) },
+    ];
 
-      const qRevenue = qOrders
-        .filter((o) => o.orderStatus !== 'cancelled')
-        .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+    for (const q of quartersDefs) {
+      const [qCount, qRev] = await Promise.all([
+        prisma.order.count({ where: { createdAt: { gte: q.start, lt: q.end } } }),
+        prisma.order.aggregate({
+          where: { createdAt: { gte: q.start, lt: q.end }, orderStatus: { not: 'cancelled' } },
+          _sum: { total: true },
+        }),
+      ]);
 
-      return {
+      quarters.push({
         label: q.label,
         labelAr: q.labelAr,
-        revenue: qRevenue,
-        orders: qOrders.length,
-      };
-    });
+        revenue: Number(qRev._sum.total || 0),
+        orders: qCount,
+      });
+    }
 
     const result = {
       success: true,

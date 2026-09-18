@@ -160,7 +160,8 @@ export default function CartPage() {
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              className="p-1.5 hover:bg-white text-gray-600 rounded transition-colors"
+                              aria-label={isRtl ? 'تقليل الكمية' : 'Decrease quantity'}
+                              className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white text-gray-600 rounded transition-colors"
                             >
                               <Minus className="w-3.5 h-3.5" />
                             </button>
@@ -170,7 +171,8 @@ export default function CartPage() {
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              className="p-1.5 hover:bg-white text-gray-600 rounded transition-colors"
+                              aria-label={isRtl ? 'زيادة الكمية' : 'Increase quantity'}
+                              className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white text-gray-600 rounded transition-colors"
                             >
                               <Plus className="w-3.5 h-3.5" />
                             </button>
@@ -239,6 +241,8 @@ export default function CartPage() {
                 <form onSubmit={handleApplyCoupon} className="flex gap-2 max-w-md">
                   <input
                     type="text"
+                    id="coupon-input"
+                    aria-label={isRtl ? 'كود الخصم' : 'Discount coupon code'}
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value)}
                     placeholder={isRtl ? 'اكتب كود الخصم هنا' : 'Enter coupon code'}

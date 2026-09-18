@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
 import { apiSuccess, apiError, handleApiError } from '@/lib/api-response';
 import { serializeProduct } from '@/lib/product-helpers';
+import { categoriesListCache } from '@/lib/server-cache';
 import { Prisma } from '@prisma/client';
 
 let cachedCatalog: { products: any[]; categories: any[]; timestamp: number } | null = null;
@@ -120,7 +121,7 @@ export async function GET(request: Request) {
         where,
         orderBy,
         skip: page && limit ? (page - 1) * limit : undefined,
-        take: limit,
+        take: limit || 100,
         include: {
           category: true,
           variants: true,
@@ -132,10 +133,16 @@ export async function GET(request: Request) {
         },
       }),
       prisma.product.count({ where }),
-      prisma.category.findMany({
-        where: { isActive: true, isArchived: false },
-        orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
-      }),
+      (async () => {
+        const cached = categoriesListCache.get('__all__');
+        if (cached) return cached as any[];
+        const cats = await prisma.category.findMany({
+          where: { isActive: true, isArchived: false },
+          orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
+        });
+        categoriesListCache.set('__all__', cats);
+        return cats;
+      })(),
     ]);
 
     const parsedProducts = products.map(serializeProduct);

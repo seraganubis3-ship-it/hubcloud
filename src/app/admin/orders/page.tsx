@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Order } from '@/types';
 import { useStore } from '@/context/StoreContext';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
 import {
   ShoppingBag,
   RefreshCw,
@@ -25,7 +26,16 @@ import {
 } from 'lucide-react';
 
 export default function AdminOrdersPage() {
-  const { isRtl, formatPrice, orders, updateOrderStatus, updatePaymentStatus, showToast } = useStore();
+  const { isRtl, formatPrice, updateOrderStatus, updatePaymentStatus, showToast } = useStore();
+
+  const fetchOrders = useCallback(async () => {
+    const res = await fetch('/api/orders');
+    const data = await res.json();
+    return (data.orders as Order[]) || [];
+  }, []);
+
+  const { data: liveOrders, isLoading, isRefreshing } = useLiveQuery<Order[]>(fetchOrders, 15000);
+  const orders = liveOrders || [];
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -171,7 +181,11 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden relative">
+        <div className="absolute top-3 right-4 flex items-center gap-1.5 z-10 bg-slate-950/80 px-2 py-1 rounded-full border border-slate-800">
+          <span className={`w-2 h-2 rounded-full ${isRefreshing ? 'bg-blue-400' : 'bg-emerald-400 animate-pulse'}`} />
+          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{isRefreshing ? (isRtl ? 'جاري التحديث...' : 'Refreshing...') : (isRtl ? 'مباشر' : 'Live')}</span>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left rtl:text-right text-xs text-slate-300 min-w-[700px]">
             <thead className="bg-slate-950/80 text-[11px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-800">

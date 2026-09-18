@@ -57,12 +57,17 @@ export async function POST(request: Request) {
           throw new Error('Product variant not found');
         }
         previousStock = variant.stockCount;
-        newStock = Math.max(0, previousStock + delta);
 
-        await tx.productVariant.update({
+        const updatedVariant = await tx.productVariant.update({
           where: { id: variantId },
-          data: { stockCount: newStock },
+          data: { stockCount: { increment: delta } },
         });
+
+        if (updatedVariant.stockCount < 0) {
+          throw new Error('Resulting stock cannot be negative');
+        }
+
+        newStock = updatedVariant.stockCount;
 
         // Recalculate parent product total stock from all variants
         const allVariants = await tx.productVariant.findMany({
@@ -79,10 +84,22 @@ export async function POST(request: Request) {
           },
         });
       } else {
+        const updatedProduct = await tx.product.update({
+          where: { id: productId },
+          data: {
+            stockCount: { increment: delta },
+          },
+        });
+
+        if (updatedProduct.stockCount < 0) {
+          throw new Error('Resulting stock cannot be negative');
+        }
+
+        newStock = updatedProduct.stockCount;
+
         await tx.product.update({
           where: { id: productId },
           data: {
-            stockCount: newStock,
             inStock: newStock > 0,
           },
         });
@@ -131,6 +148,9 @@ export async function POST(request: Request) {
   } catch (error: any) {
     if (error.message === 'Product not found' || error.message === 'Product variant not found') {
       return apiError(error.message, 404);
+    }
+    if (error.message === 'Resulting stock cannot be negative') {
+      return apiError(error.message, 400);
     }
     return handleApiError(error);
   }

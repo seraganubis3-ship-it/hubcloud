@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -47,8 +48,11 @@ function ProductsCatalog() {
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [selectedBrands, setSelectedBrands] = useState<string[]>(brandParam ? [brandParam.toLowerCase()] : []);
   const [brandSearch, setBrandSearch] = useState('');
+  const debouncedBrandSearch = useDebounce(brandSearch, 250);
   const [priceMin, setPriceMin] = useState<number>(0);
   const [priceMax, setPriceMax] = useState<number>(120000);
+  const debouncedPriceMin = useDebounce(priceMin, 200);
+  const debouncedPriceMax = useDebounce(priceMax, 200);
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'best' | 'price-asc' | 'price-desc'>('best');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -159,7 +163,7 @@ function ProductsCatalog() {
       }
 
       // Price filter
-      if (p.price < priceMin || p.price > priceMax) return false;
+      if (p.price < debouncedPriceMin || p.price > debouncedPriceMax) return false;
 
       // Stock filter
       if (inStockOnly && !p.inStock) return false;
@@ -170,7 +174,7 @@ function ProductsCatalog() {
       if (sortBy === 'price-desc') return b.price - a.price;
       return 0;
     });
-  }, [products, queryParam, selectedCategory, selectedBrands, priceMin, priceMax, inStockOnly, sortBy]);
+  }, [products, queryParam, selectedCategory, selectedBrands, debouncedPriceMin, debouncedPriceMax, inStockOnly, sortBy]);
 
   const currentCategoryObj = categories.find(c => c.slug === selectedCategory);
   const currentCategoryTitle = currentCategoryObj
@@ -340,7 +344,7 @@ function ProductsCatalog() {
               </div>
               <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                 {dynamicBrands
-                  .filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase()))
+                  .filter(b => b.name.toLowerCase().includes(debouncedBrandSearch.toLowerCase()))
                   .map(b => {
                     const isChecked = selectedBrands.includes(b.id.toLowerCase());
                     return (
