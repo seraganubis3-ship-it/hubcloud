@@ -50,7 +50,7 @@ const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     badgeEn: 'AUTHORIZED TECH DEALER',
     badgeAr: 'موزع رسمي معتمد',
     pillColor: 'bg-blue-500/20 text-blue-300 border-blue-400/40',
-    bannerImage: '/images/banners/cat_laptops.jpg',
+    bannerImage: '/images/banners/cat_laptops.png',
     isFullGraphicBanner: true,
     perks: [
       { en: 'Official 1-3 Yr Warranty', ar: 'ضمان محلي معتمد حتى 3 سنوات' },
@@ -172,10 +172,12 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
           style={{ aspectRatio: '1024 / 341' }}
         >
           <Image
-            src={config.bannerImage}
+            src={`${config.bannerImage}?v=2`}
             alt={title}
             fill
             priority
+            quality={100}
+            unoptimized
             className="object-cover object-center w-full h-full select-none"
             sizes="(max-width: 1536px) 100vw, 1536px"
           />
