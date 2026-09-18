@@ -23,11 +23,11 @@ export default function HomePage() {
       {/* 4. Today's Deals with Countdown & Discount Badges */}
       <DealsSection />
 
-      {/* 5. Best Sellers Catalog */}
-      <BestSellersSection />
-
-      {/* 6. Official Brand Partners Strip */}
+      {/* 5. Official Authorized Technology Partners Strip */}
       <BrandRow />
+
+      {/* 6. Best Sellers Catalog */}
+      <BestSellersSection />
 
       {/* 7. Our Valued Corporate Clients & Success Partners */}
       <OurClientsSection />
