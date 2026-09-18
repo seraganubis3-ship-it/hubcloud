@@ -31,14 +31,14 @@ export default function HomePage() {
       {/* 6. Today's Deals with Countdown & Discount Badges */}
       <DealsSection />
 
-      {/* 7. Simple & Beautiful Promotional Banners */}
-      <PromoBanners />
-
-      {/* 8. Best Sellers Catalog */}
+      {/* 7. Best Sellers Catalog */}
       <BestSellersSection />
 
-      {/* 9. Corporate Solutions & IT Consultation Transition Banner */}
+      {/* 8. Corporate Solutions & IT Consultation Transition Banner */}
       <ConsultationStrip />
+
+      {/* 9. Hubcloud Official Security & Cloud Solutions Banner */}
+      <PromoBanners />
     </div>
   );
 }
