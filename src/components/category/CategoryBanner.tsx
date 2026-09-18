@@ -166,24 +166,19 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
   if (config.isFullGraphicBanner) {
     return (
       <div className="space-y-4 mb-6 sm:mb-8">
-        {/* Glow ambient effect and rounded frame */}
-        <div className="relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/25 via-cyan-500/20 to-blue-700/25 rounded-3xl blur-xl opacity-70 group-hover:opacity-100 transition duration-500 -z-10 pointer-events-none" />
-
-          {/* Main Banner Card with curved edges (انعواج الأطراف / Rounded 3xl) */}
-          <div
-            className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/40 border border-slate-700/60 bg-[#071328] ring-1 ring-white/10 w-full transition-all duration-300 group-hover:shadow-blue-900/30"
-            style={{ aspectRatio: '1024 / 341' }}
-          >
-            <Image
-              src={config.bannerImage}
-              alt={title}
-              fill
-              priority
-              className="object-contain sm:object-cover object-center w-full h-full select-none"
-              sizes="(max-width: 1536px) 100vw, 1536px"
-            />
-          </div>
+        {/* Flat, seamless Banner Card embedded cleanly into the page */}
+        <div
+          className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 dark:border-slate-800/80 bg-slate-100/60 dark:bg-slate-900/40 w-full"
+          style={{ aspectRatio: '1024 / 341' }}
+        >
+          <Image
+            src={config.bannerImage}
+            alt={title}
+            fill
+            priority
+            className="object-cover object-center w-full h-full select-none"
+            sizes="(max-width: 1536px) 100vw, 1536px"
+          />
         </div>
 
         {/* Quick Filter Tag Chips & Guarantees bar below the banner */}
