@@ -27,7 +27,7 @@ export const PromoBanners: React.FC = () => {
             title={isRtl ? 'تواصل معنا لحلول الأنظمة الأمنية والبنية التحتية' : 'Contact us for security systems & cloud infrastructure'}
           >
             <Image
-              src="/images/banners/hubcloud-solutions-banner.png"
+              src="/images/banners/hubcloud-solutions-banner.png?v=5"
               alt="Hubcloud IT Solutions - Security Systems & Cloud Infrastructure"
               fill
               priority

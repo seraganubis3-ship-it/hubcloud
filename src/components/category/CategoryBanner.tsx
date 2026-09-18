@@ -176,7 +176,7 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
           style={{ aspectRatio: '1958 / 803' }}
         >
           <Image
-            src={`${config.bannerImage}?v=3`}
+            src={`${config.bannerImage}?v=5`}
             alt={title}
             fill
             priority

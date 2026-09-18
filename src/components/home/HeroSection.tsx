@@ -12,21 +12,21 @@ const DEFAULT_HERO_BANNERS = [
     title: 'High-End Laptops & Mobile Workstations',
     titleAr: 'لابتوبات ومحطات عمل احترافية فائقة الأداء',
     primaryHref: '/category/laptops',
-    image: '/images/banners/hero_laptops.png?v=4',
+    image: '/images/banners/hero_laptops.png?v=5',
   },
   {
     id: 'hero-2',
     title: 'High-Performance Desktops & Workstations',
     titleAr: 'محطات عمل وأجهزة ديسكتوب فائقة القوة',
     primaryHref: '/category/desktops',
-    image: '/images/banners/hero_desktops.png?v=4',
+    image: '/images/banners/hero_desktops.png?v=5',
   },
   {
     id: 'hero-3',
     title: 'Enterprise Infrastructure & Networking Solutions',
     titleAr: 'سويتشات Cisco المدارة وجدران حماية Fortinet',
     primaryHref: '/category/network-device',
-    image: '/images/banners/hero_network.png?v=4',
+    image: '/images/banners/hero_network.png?v=5',
   },
 ];
 
