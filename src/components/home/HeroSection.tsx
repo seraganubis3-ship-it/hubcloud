@@ -59,7 +59,7 @@ export const HeroSection: React.FC = () => {
     <section className="pt-2 sm:pt-4 pb-2">
       <div className="max-w-[1536px] mx-auto px-3 sm:px-6">
         {/* Full Photographic Image Banner Slider (Widescreen Horizontal Layout - 100% Complete & Uncropped) */}
-        <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg group bg-slate-950 w-full h-[200px] sm:h-[280px] md:h-[360px] lg:h-[430px] xl:h-[480px] border border-slate-800/80">
+        <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg group bg-slate-950 w-full aspect-[16/7] sm:aspect-[1920/640] border border-slate-800/80">
           {banners.map((b, index) => {
             const isActive = index === currentSlide;
             return (
@@ -71,13 +71,13 @@ export const HeroSection: React.FC = () => {
                   isActive ? 'opacity-100 z-10 pointer-events-auto' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
-                {/* Real High-Resolution Studio Photography Banner Image - 100% Uncropped */}
+                {/* Real High-Resolution Studio Photography Banner Image - 100% Complete & Uncropped */}
                 <Image
                   src={b.image}
                   alt={isRtl ? b.titleAr : b.title}
                   fill
                   priority={index === 0}
-                  className="object-contain sm:object-cover object-center w-full h-full"
+                  className="object-contain w-full h-full select-none"
                   sizes="(max-width: 1536px) 100vw, 1536px"
                 />
               </Link>

@@ -32,7 +32,7 @@ export const PromoBanners: React.FC = () => {
               fill
               priority
               sizes="(max-width: 768px) 100vw, (max-width: 1536px) 95vw, 1536px"
-              className="object-cover sm:object-contain object-center group-hover:scale-[1.015] transition-transform duration-500 ease-out"
+              className="object-contain object-center group-hover:scale-[1.015] transition-transform duration-500 ease-out"
             />
           </a>
 

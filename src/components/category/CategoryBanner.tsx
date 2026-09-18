@@ -173,14 +173,14 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
           {/* Main Banner Card with curved edges (انعواج الأطراف / Rounded 3xl) */}
           <div
             className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl shadow-blue-950/40 border border-slate-700/60 bg-[#071328] ring-1 ring-white/10 w-full transition-all duration-300 group-hover:shadow-blue-900/30"
-            style={{ aspectRatio: '1024 / 419' }}
+            style={{ aspectRatio: '1024 / 341' }}
           >
             <Image
               src={config.bannerImage}
               alt={title}
               fill
               priority
-              className="object-cover object-center w-full h-full select-none"
+              className="object-contain sm:object-cover object-center w-full h-full select-none"
               sizes="(max-width: 1536px) 100vw, 1536px"
             />
           </div>
