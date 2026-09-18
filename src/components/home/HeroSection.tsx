@@ -77,6 +77,8 @@ export const HeroSection: React.FC = () => {
                   alt={isRtl ? b.titleAr : b.title}
                   fill
                   priority={index === 0}
+                  quality={100}
+                  unoptimized
                   className="object-contain w-full h-full select-none"
                   sizes="(max-width: 1536px) 100vw, 1536px"
                 />

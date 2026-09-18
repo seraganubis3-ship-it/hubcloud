@@ -69,7 +69,8 @@ const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     badgeEn: 'HEAVY WORKLOAD COMPUTING',
     badgeAr: 'حوسبة الأعمال والمشاريع الهندسية',
     pillColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40',
-    bannerImage: '/images/banners/cat_desktops.jpg',
+    bannerImage: '/images/banners/cat_desktops.png',
+    isFullGraphicBanner: true,
     perks: [
       { en: 'Intel Xeon & Core i9', ar: 'معالجات Intel Xeon و Core i9' },
       { en: 'NVIDIA RTX Ada Quadro', ar: 'كروت NVIDIA RTX الهندسية' },
@@ -87,7 +88,8 @@ const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     badgeEn: 'ENTERPRISE INFRASTRUCTURE',
     badgeAr: 'بنية تحتية وشبكات معتمدة',
     pillColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40',
-    bannerImage: '/images/banners/cat_network.jpg',
+    bannerImage: '/images/banners/cat_network.png',
+    isFullGraphicBanner: true,
     perks: [
       { en: 'Gigabit PoE+ Managed', ar: 'سويتشات Gigabit PoE+ مدارة' },
       { en: 'Zero-Trust Cyber Defense', ar: 'جدران حماية وأمان متقدم' },
@@ -123,7 +125,8 @@ const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     badgeEn: 'PRO WORKSPACE GEAR',
     badgeAr: 'ملحقات وبيئة عمل متطورة',
     pillColor: 'bg-purple-500/20 text-purple-300 border-purple-400/40',
-    bannerImage: '/images/banners/cat_accessories.jpg',
+    bannerImage: '/images/banners/cat_accessories.png',
+    isFullGraphicBanner: true,
     perks: [
       { en: '100% Genuine Guaranteed', ar: 'منتجات أصلية 100% مضمونة' },
       { en: 'Thunderbolt 4 Multi-Display', ar: 'دعم توصيل شاشات متعددة 4K' },
@@ -169,10 +172,10 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
         {/* Flat, seamless Banner Card embedded cleanly into the page */}
         <div
           className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 dark:border-slate-800/80 bg-slate-100/60 dark:bg-slate-900/40 w-full"
-          style={{ aspectRatio: '1024 / 341' }}
+          style={{ aspectRatio: '1958 / 803' }}
         >
           <Image
-            src={`${config.bannerImage}?v=2`}
+            src={`${config.bannerImage}?v=3`}
             alt={title}
             fill
             priority
