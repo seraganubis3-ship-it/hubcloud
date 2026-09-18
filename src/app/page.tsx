@@ -5,10 +5,8 @@ import { DealsSection } from '@/components/home/DealsSection';
 import { BestSellersSection } from '@/components/home/BestSellersSection';
 import { BrandRow } from '@/components/home/BrandRow';
 import { TrustBadgesRow } from '@/components/home/TrustBadgesRow';
-
-import { ConsultationStrip } from '@/components/home/ConsultationStrip';
-import { PromoBanners } from '@/components/home/PromoBanners';
 import { OurClientsSection } from '@/components/home/OurClientsSection';
+import { PromoBanners } from '@/components/home/PromoBanners';
 
 export default function HomePage() {
   return (
@@ -22,23 +20,21 @@ export default function HomePage() {
       {/* 3. Shop by Category (Mobile Circular Strip / Desktop Grid) */}
       <CategoryGrid />
 
-      {/* 4. Official Brand Partners Strip */}
-      <BrandRow />
-
-      {/* 5. Our Valued Corporate Clients & Success Partners */}
-      <OurClientsSection />
-
-      {/* 6. Today's Deals with Countdown & Discount Badges */}
+      {/* 4. Today's Deals with Countdown & Discount Badges */}
       <DealsSection />
 
-      {/* 7. Best Sellers Catalog */}
+      {/* 5. Best Sellers Catalog */}
       <BestSellersSection />
 
-      {/* 8. Corporate Solutions & IT Consultation Transition Banner */}
-      <ConsultationStrip />
+      {/* 6. Official Brand Partners Strip */}
+      <BrandRow />
 
-      {/* 9. Hubcloud Official Security & Cloud Solutions Banner */}
+      {/* 7. Our Valued Corporate Clients & Success Partners */}
+      <OurClientsSection />
+
+      {/* 8. Hubcloud Official Security & Cloud Solutions Closing Banner */}
       <PromoBanners />
     </div>
   );
 }
+
