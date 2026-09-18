@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Logo } from './Logo';
 import { useStore } from '@/context/StoreContext';
 import {
@@ -31,6 +32,7 @@ import { AnimatedSearchPlaceholder } from '@/components/ui/AnimatedSearchPlaceho
 
 export const MainHeader: React.FC = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     language,
     setLanguage,
@@ -48,10 +50,48 @@ export const MainHeader: React.FC = () => {
     formatPrice
   } = useStore();
 
+  const [mounted, setMounted] = useState(false);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close mobile menu on page navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Lock body scrolling when mobile drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [mobileMenuOpen]);
+
+  // Close drawer on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+    if (mobileMenuOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -81,11 +121,12 @@ export const MainHeader: React.FC = () => {
   };
 
   return (
-    <header
-      className={`bg-white/95 backdrop-blur-md border-b sticky top-0 w-full transition-all duration-200 ${
-        mobileMenuOpen ? 'z-[60]' : 'z-40'
-      } ${isScrolled ? 'shadow-md border-gray-200' : 'shadow-xs border-gray-100'}`}
-    >
+    <>
+      <header
+        className={`bg-white/95 backdrop-blur-md border-b sticky top-0 w-full transition-all duration-200 z-40 ${
+          isScrolled ? 'shadow-md border-gray-200' : 'shadow-xs border-gray-100'
+        }`}
+      >
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-3 sm:gap-4 lg:gap-8">
         {/* Animated Mobile Burger Button */}
         <button
@@ -363,35 +404,38 @@ export const MainHeader: React.FC = () => {
           </button>
         </form>
       </div>
+    </header>
 
-      {/* Mobile Drawer Navigation (Slide-over with smooth 60fps Open/Close CSS transition) */}
-      <div
-        className={`fixed inset-0 z-50 transition-all duration-300 ${
-          mobileMenuOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'
-        }`}
-        aria-hidden={!mobileMenuOpen}
-      >
-        {/* Smooth Backdrop Fade In & Out */}
+    {/* Mobile Drawer Navigation (Slide-over with smooth 60fps Open/Close CSS transition) rendered via Portal */}
+    {mounted &&
+      createPortal(
         <div
-          className={`fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
-            mobileMenuOpen ? 'opacity-100' : 'opacity-0'
+          className={`fixed inset-0 z-[99999] transition-all duration-300 ${
+            mobileMenuOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'
           }`}
-          onClick={() => setMobileMenuOpen(false)}
-        />
-
-        {/* Drawer Content with Smooth Slide In & Out */}
-        <div
-          dir={isRtl ? 'rtl' : 'ltr'}
-          className={`fixed top-0 bottom-0 ${
-            isRtl ? 'right-0' : 'left-0'
-          } w-[86%] max-w-sm bg-white h-full shadow-2xl flex flex-col justify-between z-10 transition-transform duration-300 ease-out transform ${
-            mobileMenuOpen
-              ? 'translate-x-0'
-              : isRtl
-              ? 'translate-x-full'
-              : '-translate-x-full'
-          }`}
+          aria-hidden={!mobileMenuOpen}
         >
+          {/* Smooth Backdrop Fade In & Out */}
+          <div
+            className={`fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity duration-300 ease-in-out z-[99998] ${
+              mobileMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Drawer Content with Smooth Slide In & Out */}
+          <div
+            dir={isRtl ? 'rtl' : 'ltr'}
+            className={`fixed top-0 bottom-0 ${
+              isRtl ? 'right-0' : 'left-0'
+            } w-[86%] max-w-sm bg-white h-full shadow-2xl flex flex-col justify-between z-[99999] transition-transform duration-300 ease-out transform ${
+              mobileMenuOpen
+                ? 'translate-x-0'
+                : isRtl
+                ? 'translate-x-full'
+                : '-translate-x-full'
+            }`}
+          >
           {/* Top Section (Scrollable) */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {/* Drawer Header */}
@@ -631,7 +675,9 @@ export const MainHeader: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
-    </header>
+      </div>,
+      document.body
+    )}
+  </>
   );
 };

@@ -115,8 +115,25 @@ interface StoreContextType {
   setActiveCategory: (cat: string) => void;
 
   // Notification Toast
-  toast: { message: string; type: 'success' | 'info' | 'error' } | null;
-  showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
+  toast: {
+    message: string;
+    type: 'success' | 'info' | 'error';
+    productTitle?: string;
+    productImage?: string;
+    productPrice?: number;
+    isCart?: boolean;
+  } | null;
+  showToast: (
+    message: string,
+    type?: 'success' | 'info' | 'error',
+    extra?: {
+      productTitle?: string;
+      productImage?: string;
+      productPrice?: number;
+      isCart?: boolean;
+    }
+  ) => void;
+  hideToast: () => void;
 
   // Social Channels
   socialLinks: SocialLinkConfig[];
@@ -141,7 +158,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'info' | 'error';
+    productTitle?: string;
+    productImage?: string;
+    productPrice?: number;
+    isCart?: boolean;
+  } | null>(null);
   const [socialLinks, setSocialLinks] = useState<SocialLinkConfig[]>(DEFAULT_SOCIAL_LINKS);
 
   useEffect(() => {
@@ -363,11 +387,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 3500);
+  const hideToast = useCallback(() => {
+    setToast(null);
+  }, []);
+
+  const showToast = useCallback((
+    message: string,
+    type: 'success' | 'info' | 'error' = 'success',
+    extra?: {
+      productTitle?: string;
+      productImage?: string;
+      productPrice?: number;
+      isCart?: boolean;
+    }
+  ) => {
+    setToast({ message, type, ...extra });
   }, []);
 
   const formatPrice = useCallback((priceInEgp: number) => {
@@ -419,8 +453,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
 
     showToast(
-      language === 'ar' ? `تمت إضافة "${product.nameAr || product.name}" إلى سلة المشتريات!` : `Added "${product.name}" to your cart!`,
-      'success'
+      language === 'ar' ? 'تمت إضافة المنتج إلى سلة المشتريات!' : 'Added product to your shopping cart!',
+      'success',
+      {
+        productTitle: language === 'ar' ? (product.nameAr || product.name) : product.name,
+        productImage: (product.images && product.images[0]) || '',
+        productPrice: finalUnitPrice,
+        isCart: true,
+      }
     );
   }, [language, showToast]);
 
@@ -752,6 +792,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setActiveCategory,
     toast,
     showToast,
+    hideToast,
     socialLinks,
     updateSocialLinks
   }), [
@@ -804,6 +845,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setActiveCategory,
     toast,
     showToast,
+    hideToast,
     socialLinks,
     updateSocialLinks
   ]);
