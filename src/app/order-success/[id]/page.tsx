@@ -137,23 +137,37 @@ export default function OrderSuccessPage({ params }: { params: { id: string } })
 
               <div className="bg-slate-50 p-4 rounded-2xl border border-gray-200 space-y-3">
                 <div className="divide-y divide-gray-200/70">
-                  {order.items.map((it: any, idx: number) => (
-                    <div key={idx} className="py-2.5 flex items-center justify-between text-[13px]">
-                      <div className="space-y-0.5">
-                        <span className="font-bold text-gray-900 block">
-                          {it.quantity}× {it.product.name}
-                        </span>
-                        {it.selectedRam && (
-                          <span className="text-[11px] text-gray-500 block">
-                            {it.selectedRam} {it.selectedStorage ? `• ${it.selectedStorage}` : ''}
+                  {order.items.map((it: any, idx: number) => {
+                    const targetId = it.productId || it.product?.id;
+                    const title = isRtl
+                      ? (it.product?.nameAr || it.productNameAr || it.product?.name || it.productName || 'منتج عتادي')
+                      : (it.product?.name || it.productName || 'Hardware Unit');
+                    const itemContent = (
+                      <div className="py-2.5 flex items-center justify-between text-[13px] hover:text-blue-600 transition-colors">
+                        <div className="space-y-0.5">
+                          <span className="font-bold text-gray-900 hover:text-blue-600 block">
+                            {it.quantity}× {title}
                           </span>
-                        )}
+                          {it.selectedRam && (
+                            <span className="text-[11px] text-gray-500 block">
+                              {it.selectedRam} {it.selectedStorage ? `• ${it.selectedStorage}` : ''}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-bold text-gray-900 font-mono">
+                          {formatPrice(it.totalPrice)}
+                        </span>
                       </div>
-                      <span className="font-bold text-gray-900 font-mono">
-                        {formatPrice(it.totalPrice)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+
+                    return targetId ? (
+                      <Link key={idx} href={`/products/${targetId}`} className="block">
+                        {itemContent}
+                      </Link>
+                    ) : (
+                      <div key={idx}>{itemContent}</div>
+                    );
+                  })}
                 </div>
 
                 <div className="pt-3 border-t border-gray-200 flex justify-between items-center text-[14px]">

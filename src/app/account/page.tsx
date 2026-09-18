@@ -456,26 +456,39 @@ export default function AccountPage() {
 
                         {/* Order Items Preview */}
                         <div className="space-y-2">
-                          {ord.items.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-[13px] text-gray-700 gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="font-bold text-blue-600 shrink-0 font-mono">
-                                  {item.quantity}×
-                                </span>
-                                <span className="truncate font-medium text-gray-800">
-                                  {item.product?.name || 'Enterprise Hardware'}
-                                </span>
-                                {item.selectedRam && (
-                                  <span className="text-[11px] text-gray-400 shrink-0">
-                                    ({item.selectedRam})
+                          {ord.items.map((item, idx) => {
+                            const targetId = item.productId || item.product?.id;
+                            const title = isRtl
+                              ? (item.product?.nameAr || item.productNameAr || item.product?.name || item.productName || 'منتج عتادي')
+                              : (item.product?.name || item.productName || 'Hardware Unit');
+                            const content = (
+                              <div className="flex items-center justify-between text-[13px] text-gray-700 gap-2 hover:text-blue-600 transition-colors py-1">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="font-bold text-blue-600 shrink-0 font-mono">
+                                    {item.quantity}×
                                   </span>
-                                )}
+                                  <span className="truncate font-medium text-gray-800 hover:text-blue-600">
+                                    {title}
+                                  </span>
+                                  {item.selectedRam && (
+                                    <span className="text-[11px] text-gray-400 shrink-0">
+                                      ({item.selectedRam})
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-mono font-bold text-gray-900 shrink-0">
+                                  {formatPrice(item.totalPrice)}
+                                </span>
                               </div>
-                              <span className="font-mono font-bold text-gray-900 shrink-0">
-                                {formatPrice(item.totalPrice)}
-                              </span>
-                            </div>
-                          ))}
+                            );
+                            return targetId ? (
+                              <Link key={idx} href={`/products/${targetId}`} className="block">
+                                {content}
+                              </Link>
+                            ) : (
+                              <div key={idx}>{content}</div>
+                            );
+                          })}
                         </div>
 
                         {/* Footer Total and Actions */}

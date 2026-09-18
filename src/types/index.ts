@@ -167,6 +167,10 @@ export interface CartItem {
   selectedOptions?: Record<string, any>;
   unitPrice: number;
   totalPrice: number;
+  productId?: string;
+  productName?: string;
+  productNameAr?: string;
+  productImage?: string;
 }
 
 // Single-Level Category Definition

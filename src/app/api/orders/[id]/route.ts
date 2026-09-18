@@ -56,11 +56,46 @@ export async function GET(
     const isAdmin = auth.user.role === 'admin';
     const isOwner = order.customerEmail.toLowerCase() === auth.user.email.toLowerCase();
 
-    if (!isAdmin && !isOwner) {
-      return apiError('You do not have permission to view this order', 403);
+    const productIds = Array.from(
+      new Set((order.items || []).map((i: any) => i.productId).filter(Boolean))
+    );
+
+    const products = productIds.length > 0
+      ? await prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            name: true,
+            nameAr: true,
+            thumbnail: true,
+            images: true,
+            sku: true,
+            brand: true,
+            stockCount: true,
+            price: true,
+          },
+        })
+      : [];
+
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const serialized = serializeOrder(order);
+    if (serialized && serialized.items) {
+      serialized.items = serialized.items.map((item: any) => {
+        const product = productMap.get(item.productId);
+        return {
+          ...item,
+          product: product
+            ? {
+                ...product,
+                price: Number(product.price ?? 0),
+              }
+            : null,
+        };
+      });
     }
 
-    return apiSuccess({ order: serializeOrder(order) });
+    return apiSuccess({ order: serialized });
   } catch (error: any) {
     return handleApiError(error);
   }

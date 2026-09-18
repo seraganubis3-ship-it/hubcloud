@@ -61,7 +61,48 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const serializedOrders = orders.map(serializeOrder);
+    const productIds = Array.from(
+      new Set(orders.flatMap((o) => o.items.map((i) => i.productId)).filter(Boolean))
+    );
+
+    const products = productIds.length > 0
+      ? await prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            name: true,
+            nameAr: true,
+            thumbnail: true,
+            images: true,
+            sku: true,
+            brand: true,
+            stockCount: true,
+            price: true,
+          },
+        })
+      : [];
+
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    const serializedOrders = orders.map((order) => {
+      const serialized = serializeOrder(order);
+      if (serialized && serialized.items) {
+        serialized.items = serialized.items.map((item: any) => {
+          const product = productMap.get(item.productId);
+          return {
+            ...item,
+            product: product
+              ? {
+                  ...product,
+                  price: Number(product.price ?? 0),
+                }
+              : null,
+          };
+        });
+      }
+      return serialized;
+    });
+
     const result = { count: serializedOrders.length, orders: serializedOrders };
     ordersCache.set(cacheKey, result);
 

@@ -22,7 +22,9 @@ import {
   Phone,
   Mail,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  ExternalLink,
+  Package
 } from 'lucide-react';
 
 export default function AdminOrdersPage() {
@@ -317,26 +319,119 @@ export default function AdminOrdersPage() {
 
             {/* Order Items Table */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-300 uppercase">
-                {isRtl ? 'المنتجات في الطلب' : 'Procured Hardware Items'}
-              </h4>
-              <div className="bg-slate-950/60 rounded-xl border border-slate-800 divide-y divide-slate-800 text-xs">
-                {selectedOrder.items.map((item, idx) => (
-                  <div key={idx} className="p-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <span className="font-bold text-white block truncate">
-                        {item.quantity}× {item.product?.name || (isRtl ? 'منتج تجهيز' : 'Hardware Unit')}
-                      </span>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                        {item.selectedRam && <span>{item.selectedRam}</span>}
-                        {item.selectedStorage && <span>• {item.selectedStorage}</span>}
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-300 uppercase">
+                  {isRtl ? 'المنتجات في الطلب (اضغط على المنتج لمعاينة كامل مواصفاته)' : 'Procured Items (Click item to inspect full specs)'}
+                </h4>
+                <span className="text-[10px] text-blue-400 font-mono">
+                  {selectedOrder.items.length} {isRtl ? 'منتجات' : 'items'}
+                </span>
+              </div>
+
+              <div className="bg-slate-950/80 rounded-xl border border-slate-800 divide-y divide-slate-800 text-xs overflow-hidden">
+                {selectedOrder.items.map((item: any, idx: number) => {
+                  const targetProductId = item.productId || item.product?.id;
+                  const itemTitle = isRtl
+                    ? (item.product?.nameAr || item.productNameAr || item.product?.name || item.productName || 'منتج عتادي')
+                    : (item.product?.name || item.productName || 'Hardware Unit');
+                  const thumbnail = item.product?.thumbnail || item.product?.images?.[0];
+
+                  const rowContent = (
+                    <div className="p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:bg-slate-900/90 transition-colors group cursor-pointer">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Thumbnail image */}
+                        {thumbnail ? (
+                          <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 shrink-0 overflow-hidden flex items-center justify-center p-1">
+                            <img
+                              src={thumbnail}
+                              alt={itemTitle}
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center text-slate-500">
+                            <Package className="w-5 h-5 text-slate-400" />
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-white group-hover:text-blue-400 transition-colors text-[13px] leading-snug">
+                              {item.quantity}× {itemTitle}
+                            </span>
+                            {targetProductId && (
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 shrink-0 transition-colors" />
+                            )}
+                          </div>
+
+                          {/* Brand and SKU */}
+                          {(item.product?.sku || item.product?.brand) && (
+                            <div className="text-[11px] text-slate-400 font-mono flex items-center gap-2 mt-0.5">
+                              {item.product?.brand && (
+                                <span className="text-slate-300 font-sans font-semibold">
+                                  {item.product.brand}
+                                </span>
+                              )}
+                              {item.product?.sku && <span>SKU: {item.product.sku}</span>}
+                            </div>
+                          )}
+
+                          {/* Options / Specs (RAM, Storage, Warranty) */}
+                          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400 mt-1">
+                            {item.selectedRam && (
+                              <span className="px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300 font-mono">
+                                💾 {item.selectedRam}
+                              </span>
+                            )}
+                            {item.selectedStorage && (
+                              <span className="px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300 font-mono">
+                                💽 {item.selectedStorage}
+                              </span>
+                            )}
+                            {item.selectedWarranty && (
+                              <span className="px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/40 text-blue-300">
+                                🛡️ {item.selectedWarranty}
+                              </span>
+                            )}
+                          </div>
+
+                          {targetProductId && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <span className="text-[10px] text-blue-400 group-hover:underline flex items-center gap-1 font-medium">
+                                <span>{isRtl ? 'اضغط لفتح صفحة المنتج بالمتجر ومعاينة التفاصيل' : 'Click to view product page in store'}</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-end shrink-0 pl-2 rtl:pl-0 rtl:pr-2">
+                        <span className="font-mono font-bold text-blue-400 text-sm block">
+                          {formatPrice(item.totalPrice)}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-mono block">
+                          ({formatPrice(item.unitPrice)} × {item.quantity})
+                        </span>
                       </div>
                     </div>
-                    <span className="font-mono font-bold text-blue-400 shrink-0">
-                      {formatPrice(item.totalPrice)}
-                    </span>
-                  </div>
-                ))}
+                  );
+
+                  return targetProductId ? (
+                    <a
+                      key={idx}
+                      href={`/products/${targetProductId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={isRtl ? `فتح صفحة ${itemTitle} في تبويب جديد` : `Open ${itemTitle} in new tab`}
+                      className="block"
+                    >
+                      {rowContent}
+                    </a>
+                  ) : (
+                    <div key={idx}>{rowContent}</div>
+                  );
+                })}
               </div>
             </div>
 
