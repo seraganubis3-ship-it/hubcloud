@@ -23,7 +23,7 @@ export const PromoBanners: React.FC = () => {
             href={`https://wa.me/201019569891?text=${whatsappMessage}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block relative w-full aspect-[960/365] overflow-hidden cursor-pointer bg-slate-100 dark:bg-slate-950"
+            className="block relative w-full aspect-[960/365] overflow-hidden cursor-pointer bg-white dark:bg-slate-900"
             title={isRtl ? 'تواصل معنا لحلول الأنظمة الأمنية والبنية التحتية' : 'Contact us for security systems & cloud infrastructure'}
           >
             <Image
@@ -31,8 +31,10 @@ export const PromoBanners: React.FC = () => {
               alt="Hubcloud IT Solutions - Security Systems & Cloud Infrastructure"
               fill
               priority
+              quality={100}
+              unoptimized
               sizes="(max-width: 768px) 100vw, (max-width: 1536px) 95vw, 1536px"
-              className="object-contain object-center group-hover:scale-[1.015] transition-transform duration-500 ease-out"
+              className="object-cover object-center group-hover:scale-[1.015] transition-transform duration-500 ease-out"
             />
           </a>
 
