@@ -39,7 +39,8 @@ import {
   Wand2,
   ShieldCheck,
   Image as ImageIcon,
-  FileText
+  FileText,
+  Flame
 } from 'lucide-react';
 
 interface CategoryItem {
@@ -69,6 +70,7 @@ interface ProductItem {
   inStock: boolean;
   status: string;
   isArchived: boolean;
+  isDeal?: boolean;
   thumbnail: string;
   images?: string[];
   description?: string | null;
@@ -91,6 +93,7 @@ export default function AdminProductsPage() {
   const [selectedCat, setSelectedCat] = useState('all');
   const [stockFilter, setStockFilter] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock' | 'archived'>('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dealFilter, setDealFilter] = useState<'all' | 'deals'>('all');
 
   // Selected Products for Bulk Actions
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
@@ -318,6 +321,7 @@ export default function AdminProductsPage() {
     trackInventory: true,
     allowBackorders: false,
     status: 'active',
+    isDeal: false,
     thumbnail: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=800&q=80',
     additionalImages: '',
     description: '',
@@ -422,6 +426,7 @@ export default function AdminProductsPage() {
       trackInventory: true,
       allowBackorders: false,
       status: 'active',
+      isDeal: false,
       thumbnail: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=800&q=80',
       additionalImages: '',
       description: '',
@@ -519,6 +524,7 @@ export default function AdminProductsPage() {
       seoKeywords: prod.seoKeywords || '',
       attributeValues: initialAttrVals,
       variants: prod.variants || [],
+      isDeal: Boolean(prod.isDeal),
     });
 
     setIsProductModalOpen(true);
@@ -715,6 +721,29 @@ export default function AdminProductsPage() {
     }
   };
 
+  const handleQuickDealToggle = async (p: ProductItem) => {
+    const nextDealState = !p.isDeal;
+    setProducts((prev) =>
+      prev.map((item) => (item.id === p.id ? { ...item, isDeal: nextDealState } : item))
+    );
+    try {
+      await fetch(`/api/admin/products/${p.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDeal: nextDealState }),
+      });
+      showToast(
+        nextDealState
+          ? (isRtl ? `تمت إضافة "${p.name}" إلى عروض اليوم 🔥` : `"${p.name}" added to Today's Deals 🔥`)
+          : (isRtl ? `تمت إزالة "${p.name}" من عروض اليوم` : `"${p.name}" removed from Today's Deals`),
+        'success'
+      );
+    } catch {
+      fetchCatalogData();
+      showToast(isRtl ? 'فشل تحديث حالة العرض' : 'Failed to update deal status', 'error');
+    }
+  };
+
   // Bulk Operations
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -828,7 +857,12 @@ export default function AdminProductsPage() {
       matchesStatus = p.status === statusFilter;
     }
 
-    return matchesSearch && matchesCat && matchesStock && matchesStatus;
+    let matchesDeal = true;
+    if (dealFilter === 'deals') {
+      matchesDeal = Boolean(p.isDeal);
+    }
+
+    return matchesSearch && matchesCat && matchesStock && matchesStatus && matchesDeal;
   });
 
   const totalUnits = products.reduce((sum, p) => sum + (p.stockCount || 0), 0);
@@ -836,6 +870,7 @@ export default function AdminProductsPage() {
   const lowStockCount = products.filter(
     (p) => p.stockCount > 0 && p.stockCount <= (p.lowStockThreshold || 5)
   ).length;
+  const dealsCount = products.filter((p) => p.isDeal).length;
 
   return (
     <div className="space-y-6">
@@ -1045,6 +1080,21 @@ export default function AdminProductsPage() {
             <option value="draft">{isRtl ? 'مسودة' : 'Draft'}</option>
             <option value="archived">{isRtl ? 'مؤرشف' : 'Archived'}</option>
           </select>
+
+          {/* Today's Deals Filter */}
+          <button
+            type="button"
+            onClick={() => setDealFilter((prev) => (prev === 'all' ? 'deals' : 'all'))}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+              dealFilter === 'deals'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-xs'
+                : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'
+            }`}
+            title={isRtl ? 'تصفية المنتجات التي تظهر في عروض اليوم' : 'Filter products currently in Today’s Deals'}
+          >
+            <Flame className={`w-3.5 h-3.5 ${dealFilter === 'deals' ? 'text-amber-400 fill-amber-400' : 'text-slate-400'}`} />
+            <span>{isRtl ? `عروض اليوم (${dealsCount})` : `Today's Deals (${dealsCount})`}</span>
+          </button>
         </div>
       </div>
 
@@ -1115,7 +1165,15 @@ export default function AdminProductsPage() {
                             />
                           </div>
                           <div className="min-w-0 max-w-xs">
-                            <div className="font-bold text-white text-xs truncate">{p.name}</div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-white text-xs truncate">{p.name}</span>
+                              {p.isDeal && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black shrink-0 shadow-2xs">
+                                  <Flame className="w-2.5 h-2.5 fill-amber-400 text-amber-400 animate-pulse" />
+                                  <span>{isRtl ? 'عرض اليوم' : 'Deal'}</span>
+                                </span>
+                              )}
+                            </div>
                             {p.nameAr && (
                               <div className="text-[10px] text-slate-400 truncate" dir="rtl">
                                 {p.nameAr}
@@ -1225,6 +1283,24 @@ export default function AdminProductsPage() {
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
+
+                          {/* 1-Click Quick Deal Toggle */}
+                          <button
+                            type="button"
+                            onClick={() => handleQuickDealToggle(p)}
+                            className={`p-1.5 rounded-lg transition-all ${
+                              p.isDeal
+                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs shadow-amber-500/10 hover:bg-amber-500/30'
+                                : 'bg-slate-800 hover:bg-slate-700 text-slate-500 hover:text-amber-400'
+                            }`}
+                            title={
+                              p.isDeal
+                                ? (isRtl ? 'ضمن عروض اليوم 🔥 (انقر للإلغاء)' : "In Today's Deals 🔥 (Click to remove)")
+                                : (isRtl ? 'إضافة إلى عروض اليوم 🔥' : "Add to Today's Deals 🔥")
+                            }
+                          >
+                            <Flame className={`w-3.5 h-3.5 ${p.isDeal ? 'fill-amber-400' : ''}`} />
+                          </button>
 
                           <button
                             onClick={() => handleDuplicateProduct(p.id, p.name)}
@@ -1518,6 +1594,62 @@ export default function AdminProductsPage() {
                           className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-white font-mono focus:outline-none focus:border-blue-500"
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Today's Deals Toggle */}
+                  <div
+                    className={`p-4 rounded-2xl border transition-all ${
+                      productForm.isDeal
+                        ? 'bg-amber-950/20 border-amber-500/40 shadow-xs'
+                        : 'bg-slate-950/40 border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            productForm.isDeal
+                              ? 'bg-amber-500/20 text-amber-400'
+                              : 'bg-slate-800 text-slate-500'
+                          }`}
+                        >
+                          <Flame
+                            className={`w-5 h-5 ${
+                              productForm.isDeal ? 'fill-amber-400 text-amber-400' : ''
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white flex items-center gap-2">
+                            <span>
+                              {isRtl ? 'عرض اليوم الحصري (Today’s Deal)' : "Today's Exclusive Deal"}
+                            </span>
+                            {productForm.isDeal && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950">
+                                {isRtl ? 'نشط في العروض 🔥' : 'Active Deal 🔥'}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            {isRtl
+                              ? 'عند التفعيل، سيظهر هذا المنتج فوراً في شريط عروض اليوم على الصفحة الرئيسية وفي صفحة /deals'
+                              : 'When enabled, this product appears immediately in Today’s Deals bar on the homepage and /deals'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={productForm.isDeal}
+                          onChange={(e) =>
+                            setProductForm((prev) => ({ ...prev, isDeal: e.target.checked }))
+                          }
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                      </label>
                     </div>
                   </div>
 

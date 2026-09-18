@@ -41,6 +41,16 @@ export const DealsSection: React.FC = () => {
     .filter(p => p.isDeal)
     .slice(0, 10);
 
+  // Auto-hide section completely if no deals are active today
+  if (!isCatalogLoading && dealProducts.length === 0) {
+    return null;
+  }
+
+  // If catalog is loaded and empty of deals, do not render
+  if (products.length > 0 && dealProducts.length === 0) {
+    return null;
+  }
+
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return;
     const distance = 300;
