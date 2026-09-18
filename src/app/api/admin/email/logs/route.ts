@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   if (!auth.authorized) return auth.response;
 
   try {
-    const logs = getEmailLogs();
+    const logs = await getEmailLogs();
     return NextResponse.json({ success: true, logs });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

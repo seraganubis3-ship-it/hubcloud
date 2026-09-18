@@ -4,7 +4,7 @@ import { requireAdmin } from '@/lib/auth-guard';
 
 export async function GET() {
   try {
-    const content = getSiteContent();
+    const content = await getSiteContent();
     return NextResponse.json({
       success: true,
       content,
@@ -20,7 +20,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const updated = saveSiteContent(body);
+    const updated = await saveSiteContent(body);
 
     return NextResponse.json({
       success: true,
@@ -31,3 +31,4 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+

@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   if (!auth.authorized) return auth.response;
 
   try {
-    const config = getSmtpConfig();
+    const config = await getSmtpConfig();
     // Mask password before returning to client
     const safeConfig = {
       ...config,
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const updated = saveSmtpConfig(body);
+    const updated = await saveSmtpConfig(body);
 
     const safeConfig = {
       ...updated,
@@ -40,3 +40,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+

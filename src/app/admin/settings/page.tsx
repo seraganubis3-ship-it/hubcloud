@@ -21,7 +21,8 @@ import {
   Instagram,
   Youtube,
   Linkedin,
-  ExternalLink
+  ExternalLink,
+  Wallet
 } from 'lucide-react';
 import { SocialLinkConfig } from '@/types';
 
@@ -40,16 +41,12 @@ const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' 
 export default function AdminSettingsPage() {
   const { showToast, isRtl, socialLinks, updateSocialLinks } = useStore();
   const [localSocialLinks, setLocalSocialLinks] = useState<SocialLinkConfig[]>([]);
-
-  useEffect(() => {
-    if (socialLinks && socialLinks.length > 0) {
-      setLocalSocialLinks(socialLinks);
-    }
-  }, [socialLinks]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [storeName, setStoreName] = useState('HUB CLOUD IT Solutions');
-  const [supportPhone, setSupportPhone] = useState('+20 010 60 777 895');
-  const [supportEmail, setSupportEmail] = useState('sales@hubcloud.info');
+  const [supportPhone, setSupportPhone] = useState('01019569891');
+  const [supportEmail, setSupportEmail] = useState('s@hubcloud.info');
   const [showroomAddress, setShowroomAddress] = useState('181 شارع السودان - الدور التاسع - المهندسين، الجيزة');
 
   const [commercialRegistry, setCommercialRegistry] = useState('142083');
@@ -60,22 +57,41 @@ export default function AdminSettingsPage() {
   const [standardDeliveryFee, setStandardDeliveryFee] = useState(75);
   const [dispatchCutoff, setDispatchCutoff] = useState('16:00');
 
+  const [vodafoneCashWallet, setVodafoneCashWallet] = useState('01019569891');
+  const [instapayIpa, setInstapayIpa] = useState('hubcloud@instapay');
+  const [instapayPhone, setInstapayPhone] = useState('01019569891');
+
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('hubcloud_store_settings');
-      if (saved) {
-        const data = JSON.parse(saved);
-        if (data.storeName) setStoreName(data.storeName);
-        if (data.supportPhone) setSupportPhone(data.supportPhone);
-        if (data.supportEmail) setSupportEmail(data.supportEmail);
-        if (data.showroomAddress) setShowroomAddress(data.showroomAddress);
-        if (data.commercialRegistry) setCommercialRegistry(data.commercialRegistry);
-        if (data.officialWarrantyPartner) setOfficialWarrantyPartner(data.officialWarrantyPartner);
-        if (data.workingHours) setWorkingHours(data.workingHours);
-        if (data.freeShippingThreshold) setFreeShippingThreshold(data.freeShippingThreshold);
-        if (data.standardDeliveryFee) setStandardDeliveryFee(data.standardDeliveryFee);
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/admin/settings');
+        const data = await res.json();
+        if (data.success && data.settings) {
+          const s = data.settings;
+          if (s.storeName) setStoreName(s.storeName);
+          if (s.supportPhone) setSupportPhone(s.supportPhone);
+          if (s.supportEmail) setSupportEmail(s.supportEmail);
+          if (s.showroomAddress) setShowroomAddress(s.showroomAddress);
+          if (s.commercialRegistry) setCommercialRegistry(s.commercialRegistry);
+          if (s.officialWarrantyPartner) setOfficialWarrantyPartner(s.officialWarrantyPartner);
+          if (s.workingHours) setWorkingHours(s.workingHours);
+          if (s.freeShippingThreshold !== undefined) setFreeShippingThreshold(Number(s.freeShippingThreshold));
+          if (s.standardDeliveryFee !== undefined) setStandardDeliveryFee(Number(s.standardDeliveryFee));
+          if (s.dispatchCutoff) setDispatchCutoff(s.dispatchCutoff);
+          if (s.vodafoneCashWallet) setVodafoneCashWallet(s.vodafoneCashWallet);
+          if (s.instapayIpa) setInstapayIpa(s.instapayIpa);
+          if (s.instapayPhone) setInstapayPhone(s.instapayPhone);
+          if (s.socialLinks && Array.isArray(s.socialLinks)) {
+            setLocalSocialLinks(s.socialLinks);
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching settings:', e);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {}
+    }
+    loadSettings();
   }, []);
 
   const handleToggleSocial = (id: string) => {
@@ -90,8 +106,9 @@ export default function AdminSettingsPage() {
     );
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     const payload = {
       storeName,
       supportPhone,
@@ -102,19 +119,35 @@ export default function AdminSettingsPage() {
       workingHours,
       freeShippingThreshold,
       standardDeliveryFee,
-      dispatchCutoff
+      dispatchCutoff,
+      vodafoneCashWallet,
+      instapayIpa,
+      instapayPhone,
+      socialLinks: localSocialLinks,
     };
 
     try {
-      localStorage.setItem('hubcloud_store_settings', JSON.stringify(payload));
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to save settings');
+      }
+
       if (localSocialLinks.length > 0) {
         updateSocialLinks(localSocialLinks);
       }
-      showToast(isRtl ? 'تم حفظ إعدادات المتجر وقنوات التواصل بنجاح' : 'Store settings & social channels saved successfully', 'success');
-    } catch (e) {
-      showToast('Error saving settings', 'error');
+      showToast(isRtl ? 'تم حفظ إعدادات المتجر في قاعدة البيانات بنجاح' : 'Store settings saved to database successfully', 'success');
+    } catch (e: any) {
+      showToast(e.message || 'Error saving settings', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
+
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -287,7 +320,67 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* Section 4: Social Media & WhatsApp Channels */}
+        {/* Section 4: Electronic Payment Wallets (Vodafone Cash & InstaPay) */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+            <Wallet className="w-5 h-5 text-purple-400" />
+            <h3 className="font-bold text-white text-base">
+              {isRtl ? 'بيانات محافظ الدفع الإلكتروني (فودافون كاش وإنستاباي)' : 'Electronic Payment Wallets (Vodafone Cash & InstaPay)'}
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                {isRtl ? 'رقم محفظة فودافون كاش' : 'Vodafone Cash Wallet Number'}
+              </label>
+              <input
+                type="text"
+                required
+                value={vodafoneCashWallet}
+                onChange={(e) => setVodafoneCashWallet(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                {isRtl ? 'يظهر للعميل في صفحة الدفع لتحويل المبلغ' : 'Displayed in checkout for wallet transfer'}
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                {isRtl ? 'معرّف إنستاباي (InstaPay IPA)' : 'InstaPay IPA Address'}
+              </label>
+              <input
+                type="text"
+                required
+                value={instapayIpa}
+                onChange={(e) => setInstapayIpa(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                {isRtl ? 'مثال: username@instapay' : 'e.g. hubcloud@instapay'}
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                {isRtl ? 'رقم الهاتف المسجل بإنستاباي' : 'InstaPay Registered Phone'}
+              </label>
+              <input
+                type="text"
+                required
+                value={instapayPhone}
+                onChange={(e) => setInstapayPhone(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+              />
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                {isRtl ? 'البديل المباشر للتحويل برقم الهاتف' : 'Alternative phone transfer in InstaPay'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 5: Social Media & WhatsApp Channels */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2">

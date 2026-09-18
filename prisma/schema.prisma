@@ -347,3 +347,42 @@ model SavedAddress {
   isDefault      Boolean  @default(false)
   createdAt      DateTime @default(now())
 }
+
+// 15. Dynamic Cloud-Native System & Store Settings (Replaces localStorage & local JSONs)
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+// 16. Permanent Database Email Audit & Delivery Logs (Replaces email-logs.json)
+model EmailLog {
+  id           String   @id @default(cuid())
+  to           String
+  subject      String
+  type         String
+  orderId      String?
+  status       String
+  errorMessage String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([type])
+  @@index([status])
+}
+
+// 17. Dynamic Homepage Hero Banners (Replaces hardcoded code)
+model Banner {
+  id           String   @id @default(cuid())
+  title        String
+  titleAr      String
+  primaryHref  String   @default("/products")
+  image        String
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@index([isActive, displayOrder])
+}
+

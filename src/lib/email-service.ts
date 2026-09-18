@@ -1,6 +1,5 @@
 import nodemailer, { Transporter } from 'nodemailer';
-import fs from 'fs';
-import path from 'path';
+import { prisma } from '@/lib/db';
 import {
   renderOrderConfirmationHtml,
   renderAdminOrderNotificationHtml,
@@ -39,9 +38,6 @@ export interface EmailLog {
   createdAt: string;
 }
 
-const CONFIG_FILE_PATH = path.join(process.cwd(), 'data', 'smtp-config.json');
-const LOGS_FILE_PATH = path.join(process.cwd(), 'data', 'email-logs.json');
-
 const DEFAULT_CONFIG: SmtpConfig = {
   host: process.env.SMTP_HOST || '',
   port: Number(process.env.SMTP_PORT) || 587,
@@ -49,38 +45,33 @@ const DEFAULT_CONFIG: SmtpConfig = {
   user: process.env.SMTP_USER || '',
   pass: process.env.SMTP_PASS || '',
   fromName: process.env.SMTP_FROM_NAME || 'HUB CLOUD IT Solutions',
-  fromEmail: process.env.SMTP_FROM_EMAIL || 'sales@hubcloud.info',
-  adminNotifyEmail: process.env.ADMIN_NOTIFY_EMAIL || 'sales@hubcloud.info',
+  fromEmail: process.env.SMTP_FROM_EMAIL || 's@hubcloud.info',
+  adminNotifyEmail: process.env.ADMIN_NOTIFY_EMAIL || 's@hubcloud.info',
   orderEmailsEnabled: true,
   adminAlertsEnabled: true,
 };
 
-function ensureDataDir() {
-  const dir = path.join(process.cwd(), 'data');
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
 let memorySmtpConfig: SmtpConfig | null = null;
 
-export function getSmtpConfig(): SmtpConfig {
+export async function getSmtpConfig(): Promise<SmtpConfig> {
   if (memorySmtpConfig) return memorySmtpConfig;
   try {
-    ensureDataDir();
-    if (fs.existsSync(CONFIG_FILE_PATH)) {
-      const raw = fs.readFileSync(CONFIG_FILE_PATH, 'utf-8');
-      const parsed = JSON.parse(raw);
-      return { ...DEFAULT_CONFIG, ...parsed };
+    const record = await prisma.systemSetting.findUnique({
+      where: { key: 'smtp_config' },
+    });
+    if (record?.value) {
+      const merged: SmtpConfig = { ...DEFAULT_CONFIG, ...(record.value as any) };
+      memorySmtpConfig = merged;
+      return merged;
     }
   } catch (error) {
-    // Readonly filesystem or error, safely fallback to defaults/env
+    // safely fallback to defaults/env
   }
   return DEFAULT_CONFIG;
 }
 
-export function saveSmtpConfig(newConfig: Partial<SmtpConfig>): SmtpConfig {
-  const current = getSmtpConfig();
+export async function saveSmtpConfig(newConfig: Partial<SmtpConfig>): Promise<SmtpConfig> {
+  const current = await getSmtpConfig();
 
   // If incoming password is empty or masked '••••••••', keep existing password
   let passwordToSave = current.pass;
@@ -99,44 +90,62 @@ export function saveSmtpConfig(newConfig: Partial<SmtpConfig>): SmtpConfig {
   memorySmtpConfig = merged;
 
   try {
-    ensureDataDir();
-    fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(merged, null, 2), 'utf-8');
+    await prisma.systemSetting.upsert({
+      where: { key: 'smtp_config' },
+      create: {
+        key: 'smtp_config',
+        value: merged as any,
+      },
+      update: {
+        value: merged as any,
+      },
+    });
   } catch (err) {
-    console.warn('[email-service] Could not write SMTP config to disk (possibly read-only filesystem). Retaining in memory:', err);
+    console.warn('[email-service] Could not write SMTP config to database:', err);
   }
 
   return merged;
 }
 
-export function getEmailLogs(): EmailLog[] {
+export async function getEmailLogs(): Promise<EmailLog[]> {
   try {
-    ensureDataDir();
-    if (fs.existsSync(LOGS_FILE_PATH)) {
-      const raw = fs.readFileSync(LOGS_FILE_PATH, 'utf-8');
-      return JSON.parse(raw);
-    }
+    const logs = await prisma.emailLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return logs.map((l) => ({
+      id: l.id,
+      to: l.to,
+      subject: l.subject,
+      type: l.type as any,
+      orderId: l.orderId || undefined,
+      status: l.status as any,
+      errorMessage: l.errorMessage || undefined,
+      createdAt: l.createdAt.toISOString(),
+    }));
   } catch (error) {
-    console.error('Error reading email logs:', error);
+    console.error('Error reading email logs from database:', error);
+    return [];
   }
-  return [];
 }
 
-export function recordEmailLog(entry: Omit<EmailLog, 'id' | 'createdAt'>) {
+export async function recordEmailLog(entry: Omit<EmailLog, 'id' | 'createdAt'>): Promise<void> {
   try {
-    ensureDataDir();
-    const logs = getEmailLogs();
-    const newLog: EmailLog = {
-      id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-      ...entry,
-      createdAt: new Date().toISOString(),
-    };
-    // Keep last 100 logs
-    const updated = [newLog, ...logs].slice(0, 100);
-    fs.writeFileSync(LOGS_FILE_PATH, JSON.stringify(updated, null, 2), 'utf-8');
+    await prisma.emailLog.create({
+      data: {
+        to: entry.to,
+        subject: entry.subject,
+        type: entry.type,
+        orderId: entry.orderId || null,
+        status: entry.status,
+        errorMessage: entry.errorMessage || null,
+      },
+    });
   } catch (error) {
-    console.error('Error recording email log:', error);
+    console.error('Error recording email log to database:', error);
   }
 }
+
 
 function createTransporter(config: SmtpConfig) {
   if (!config.host || !config.user) {
@@ -167,7 +176,8 @@ export async function testSmtpConnection(
   customConfig?: Partial<SmtpConfig>
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const config = customConfig ? { ...getSmtpConfig(), ...customConfig } : getSmtpConfig();
+    const baseConfig = await getSmtpConfig();
+    const config = customConfig ? { ...baseConfig, ...customConfig } : baseConfig;
     const transporter = createTransporter(config);
 
     // 1. Verify connection
@@ -181,7 +191,7 @@ export async function testSmtpConnection(
       html: renderTestEmailHtml(config),
     });
 
-    recordEmailLog({
+    await recordEmailLog({
       to: targetEmail,
       subject: 'تجربة إرسال بريد إلكتروني',
       type: 'TEST_EMAIL',
@@ -191,7 +201,7 @@ export async function testSmtpConnection(
     return { success: true, message: `تم إرسال البريد التجريبي بنجاح إلى ${targetEmail}` };
   } catch (error: any) {
     const errorMsg = error.message || 'فشل الاتصال بخادم البريد';
-    recordEmailLog({
+    await recordEmailLog({
       to: targetEmail,
       subject: 'تجربة إرسال بريد إلكتروني',
       type: 'TEST_EMAIL',
@@ -203,7 +213,7 @@ export async function testSmtpConnection(
 }
 
 export async function sendOrderConfirmationEmails(order: any): Promise<void> {
-  const config = getSmtpConfig();
+  const config = await getSmtpConfig();
 
   // If host or user is missing, silently skip without throwing
   if (!config.host || !config.user) {
@@ -231,7 +241,7 @@ export async function sendOrderConfirmationEmails(order: any): Promise<void> {
         html: renderOrderConfirmationHtml(order),
       });
 
-      recordEmailLog({
+      await recordEmailLog({
         to: order.customerEmail,
         subject: `تأكيد طلبك رقم #${order.id}`,
         type: 'ORDER_CONFIRMATION',
@@ -241,7 +251,7 @@ export async function sendOrderConfirmationEmails(order: any): Promise<void> {
       console.log(`[EmailService] Order confirmation sent to ${order.customerEmail}`);
     } catch (err: any) {
       console.error(`[EmailService] Failed to send customer confirmation for order ${order.id}:`, err.message);
-      recordEmailLog({
+      await recordEmailLog({
         to: order.customerEmail,
         subject: `تأكيد طلبك رقم #${order.id}`,
         type: 'ORDER_CONFIRMATION',
@@ -267,7 +277,7 @@ export async function sendOrderConfirmationEmails(order: any): Promise<void> {
         html: renderAdminOrderNotificationHtml(order),
       });
 
-      recordEmailLog({
+      await recordEmailLog({
         to: adminEmails.join(', '),
         subject: `طلب جديد #${order.id}`,
         type: 'ADMIN_NOTIFICATION',
@@ -277,7 +287,7 @@ export async function sendOrderConfirmationEmails(order: any): Promise<void> {
       console.log(`[EmailService] Admin order alert sent to ${adminEmails.join(', ')}`);
     } catch (err: any) {
       console.error(`[EmailService] Failed to send admin alert for order ${order.id}:`, err.message);
-      recordEmailLog({
+      await recordEmailLog({
         to: adminEmails.join(', '),
         subject: `طلب جديد #${order.id}`,
         type: 'ADMIN_NOTIFICATION',
@@ -290,7 +300,7 @@ export async function sendOrderConfirmationEmails(order: any): Promise<void> {
 }
 
 export async function sendOrderStatusUpdateEmail(order: any, newStatus?: string): Promise<void> {
-  const config = getSmtpConfig();
+  const config = await getSmtpConfig();
 
   if (!config.host || !config.user) {
     console.log('[EmailService] SMTP not configured. Skipping status update email dispatch.');
@@ -318,7 +328,7 @@ export async function sendOrderStatusUpdateEmail(order: any, newStatus?: string)
         html: renderOrderStatusUpdateHtml(order, statusToUse),
       });
 
-      recordEmailLog({
+      await recordEmailLog({
         to: order.customerEmail,
         subject: `تحديث حالة طلبك رقم #${order.id} (${statusToUse})`,
         type: 'ORDER_STATUS_UPDATE',
@@ -328,7 +338,7 @@ export async function sendOrderStatusUpdateEmail(order: any, newStatus?: string)
       console.log(`[EmailService] Status update email (${statusToUse}) sent to ${order.customerEmail}`);
     } catch (err: any) {
       console.error(`[EmailService] Failed to send status update email for order ${order.id}:`, err.message);
-      recordEmailLog({
+      await recordEmailLog({
         to: order.customerEmail,
         subject: `تحديث حالة طلبك رقم #${order.id} (${statusToUse})`,
         type: 'ORDER_STATUS_UPDATE',
@@ -339,3 +349,4 @@ export async function sendOrderStatusUpdateEmail(order: any, newStatus?: string)
     }
   }
 }
+

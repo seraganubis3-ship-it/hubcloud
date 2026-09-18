@@ -6,40 +6,54 @@ import Image from 'next/image';
 import { useStore } from '@/context/StoreContext';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+const DEFAULT_HERO_BANNERS = [
+  {
+    id: 'hero-1',
+    title: 'High-End Laptops & Mobile Workstations',
+    titleAr: 'لابتوبات ومحطات عمل احترافية فائقة الأداء',
+    primaryHref: '/category/laptops',
+    image: '/images/banners/hero_laptops.jpg',
+  },
+  {
+    id: 'hero-2',
+    title: 'High-Performance Desktops & Workstations',
+    titleAr: 'محطات عمل وأجهزة ديسكتوب فائقة القوة',
+    primaryHref: '/category/desktops',
+    image: '/images/banners/hero_desktops.jpg',
+  },
+  {
+    id: 'hero-3',
+    title: 'Enterprise Infrastructure & Networking Solutions',
+    titleAr: 'سويتشات Cisco المدارة وجدران حماية Fortinet',
+    primaryHref: '/category/network-device',
+    image: '/images/banners/hero_network.jpg',
+  },
+];
+
 export const HeroSection: React.FC = () => {
   const { isRtl } = useStore();
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  const banners = [
-    {
-      id: 1,
-      title: 'High-End Laptops & Mobile Workstations',
-      titleAr: 'لابتوبات ومحطات عمل احترافية فائقة الأداء',
-      primaryHref: '/category/laptops',
-      image: '/images/banners/hero_laptops.jpg',
-    },
-    {
-      id: 2,
-      title: 'High-Performance Desktops & Workstations',
-      titleAr: 'محطات عمل وأجهزة ديسكتوب فائقة القوة',
-      primaryHref: '/category/desktops',
-      image: '/images/banners/hero_desktops.jpg',
-    },
-    {
-      id: 3,
-      title: 'Enterprise Infrastructure & Networking Solutions',
-      titleAr: 'سويتشات Cisco المدارة وجدران حماية Fortinet',
-      primaryHref: '/category/network-device',
-      image: '/images/banners/hero_network.jpg',
-    },
-  ];
+  const [banners, setBanners] = useState(DEFAULT_HERO_BANNERS);
 
   useEffect(() => {
+    fetch('/api/banners')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.banners) && data.banners.length > 0) {
+          setBanners(data.banners);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % banners.length);
     }, 7000);
     return () => clearInterval(timer);
   }, [banners.length]);
+
 
   return (
     <section className="pt-2 sm:pt-4 pb-2">

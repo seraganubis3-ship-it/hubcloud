@@ -66,6 +66,7 @@ export const PATH_TO_PERMISSION: Record<string, AdminPermission> = {
   '/admin/audit-logs': 'audit_logs',
   '/admin/coupons': 'coupons',
   '/admin/pages': 'pages',
+  '/admin/banners': 'pages',
   '/admin/settings': 'settings',
   '/admin/emails': 'settings',
   '/admin/roles': 'roles',

@@ -57,6 +57,27 @@ export default function CheckoutPage() {
   const [paymentReference, setPaymentReference] = useState('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  const [storePaymentConfig, setStorePaymentConfig] = useState({
+    instapayIpa: 'hubcloud@instapay',
+    instapayPhone: '01019569891',
+    vodafoneCashWallet: '01019569891',
+  });
+
+  React.useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          setStorePaymentConfig({
+            instapayIpa: data.settings.instapayIpa || 'hubcloud@instapay',
+            instapayPhone: data.settings.instapayPhone || '01019569891',
+            vodafoneCashWallet: data.settings.vodafoneCashWallet || '01019569891',
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleCopy = (text: string, field: string) => {
     try {
       navigator.clipboard.writeText(text);
@@ -67,6 +88,7 @@ export default function CheckoutPage() {
       console.warn('Clipboard error:', e);
     }
   };
+
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -379,10 +401,10 @@ export default function CheckoutPage() {
                             {isRtl ? 'معرف إنستاباي (IPA):' : 'InstaPay IPA Address:'}
                           </span>
                           <div className="flex items-center gap-1.5 font-mono font-bold text-hub-blue text-[12px] sm:text-[13px] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 break-all">
-                            <span>hubcloud@instapay</span>
+                            <span>{storePaymentConfig.instapayIpa}</span>
                             <button
                               type="button"
-                              onClick={() => handleCopy('hubcloud@instapay', 'ipa')}
+                              onClick={() => handleCopy(storePaymentConfig.instapayIpa, 'ipa')}
                               className="p-1 hover:bg-blue-100 rounded text-gray-500 hover:text-hub-blue transition-colors cursor-pointer shrink-0"
                               title="Copy"
                             >
@@ -396,10 +418,10 @@ export default function CheckoutPage() {
                             {isRtl ? 'أو رقم الموبايل المسجل:' : 'Or Registered Phone:'}
                           </span>
                           <div className="flex items-center gap-1.5 font-mono font-bold text-gray-800 text-[12px] sm:text-[13px] bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
-                            <span dir="ltr">010 222 88 444</span>
+                            <span dir="ltr">{storePaymentConfig.instapayPhone}</span>
                             <button
                               type="button"
-                              onClick={() => handleCopy('01022288444', 'phone')}
+                              onClick={() => handleCopy(storePaymentConfig.instapayPhone, 'phone')}
                               className="p-1 hover:bg-gray-200 rounded text-gray-500 hover:text-hub-blue transition-colors cursor-pointer shrink-0"
                               title="Copy"
                             >
@@ -463,10 +485,10 @@ export default function CheckoutPage() {
                             {isRtl ? 'رقم محفظة فودافون كاش:' : 'Vodafone Cash Wallet Number:'}
                           </span>
                           <div className="flex items-center gap-1.5 font-mono font-bold text-[#E60000] text-[13px] sm:text-[14px] bg-red-50 px-2.5 py-1 rounded-lg border border-red-100">
-                            <span dir="ltr">010 222 88 444</span>
+                            <span dir="ltr">{storePaymentConfig.vodafoneCashWallet}</span>
                             <button
                               type="button"
-                              onClick={() => handleCopy('01022288444', 'vf')}
+                              onClick={() => handleCopy(storePaymentConfig.vodafoneCashWallet, 'vf')}
                               className="p-1 hover:bg-red-100 rounded text-gray-500 hover:text-red-600 transition-colors cursor-pointer shrink-0"
                               title="Copy"
                             >

@@ -106,6 +106,7 @@ export default function AdminLayout({
       titleAr: 'التسويق والمحتوى',
       items: [
         { name: 'Coupons & Discounts', nameAr: 'الكوبونات والتخفيضات', href: '/admin/coupons', icon: Tag },
+        { name: 'Hero Banners', nameAr: 'بانرات الواجهة الرئيسية', href: '/admin/banners', icon: Globe },
         { name: 'Pages & Content CMS', nameAr: 'إدارة صفحات ومحتوى المتجر', href: '/admin/pages', icon: Database },
       ],
     },
