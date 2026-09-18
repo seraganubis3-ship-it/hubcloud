@@ -1811,11 +1811,20 @@ export default function AdminProductsPage() {
 
                           let selectOptions: string[] = [];
                           if (attr.type === 'select' && attr.options) {
-                            try {
-                              const p = JSON.parse(attr.options);
-                              selectOptions = Array.isArray(p) ? p : [attr.options];
-                            } catch {
-                              selectOptions = attr.options.split(',').map((s: string) => s.trim());
+                            if (Array.isArray(attr.options)) {
+                              selectOptions = attr.options.map((s: any) => String(s).trim()).filter(Boolean);
+                            } else if (typeof attr.options === 'string') {
+                              try {
+                                const p = JSON.parse(attr.options);
+                                selectOptions = Array.isArray(p)
+                                  ? p.map((s: any) => String(s).trim()).filter(Boolean)
+                                  : [attr.options.trim()];
+                              } catch {
+                                selectOptions = attr.options
+                                  .split(',')
+                                  .map((s: string) => s.trim())
+                                  .filter(Boolean);
+                              }
                             }
                           }
 
