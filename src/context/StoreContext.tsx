@@ -169,35 +169,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [socialLinks, setSocialLinks] = useState<SocialLinkConfig[]>(DEFAULT_SOCIAL_LINKS);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('hubcloud_social_links');
-      if (saved) {
-        setSocialLinks(JSON.parse(saved));
-      } else {
-        const storeSettings = localStorage.getItem('hubcloud_store_settings');
-        if (storeSettings) {
-          const parsed = JSON.parse(storeSettings);
-          if (parsed.socialLinks && Array.isArray(parsed.socialLinks)) {
-            setSocialLinks(parsed.socialLinks);
-          }
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings?.socialLinks && Array.isArray(data.settings.socialLinks)) {
+          setSocialLinks(data.settings.socialLinks);
         }
-      }
-    } catch (e) {
-      console.error(e);
-    }
+      })
+      .catch((e) => {
+        console.warn('Failed to load social links from database:', e);
+      });
   }, []);
 
   const updateSocialLinks = useCallback((links: SocialLinkConfig[]) => {
     setSocialLinks(links);
-    try {
-      localStorage.setItem('hubcloud_social_links', JSON.stringify(links));
-      const storeSettings = localStorage.getItem('hubcloud_store_settings');
-      const parsed = storeSettings ? JSON.parse(storeSettings) : {};
-      parsed.socialLinks = links;
-      localStorage.setItem('hubcloud_store_settings', JSON.stringify(parsed));
-    } catch (e) {
-      console.error(e);
-    }
   }, []);
 
   // Live Catalog State from DB

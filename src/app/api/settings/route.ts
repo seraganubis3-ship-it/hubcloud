@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { DEFAULT_STORE_SETTINGS } from '@/app/api/admin/settings/route';
+import { DEFAULT_STORE_SETTINGS } from '@/lib/settings-constants';
 
 export async function GET() {
   try {

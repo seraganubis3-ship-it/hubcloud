@@ -1,35 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-
-export const DEFAULT_HERO_BANNERS = [
-  {
-    id: 'banner-1',
-    title: 'High-End Laptops & Mobile Workstations',
-    titleAr: 'لابتوبات ومحطات عمل احترافية فائقة الأداء',
-    primaryHref: '/category/laptops',
-    image: '/images/banners/hero_laptops.jpg',
-    isActive: true,
-    displayOrder: 1,
-  },
-  {
-    id: 'banner-2',
-    title: 'High-Performance Desktops & Workstations',
-    titleAr: 'محطات عمل وأجهزة ديسكتوب فائقة القوة',
-    primaryHref: '/category/desktops',
-    image: '/images/banners/hero_desktops.jpg',
-    isActive: true,
-    displayOrder: 2,
-  },
-  {
-    id: 'banner-3',
-    title: 'Enterprise Infrastructure & Networking Solutions',
-    titleAr: 'سويتشات Cisco المدارة وجدران حماية Fortinet',
-    primaryHref: '/category/network-device',
-    image: '/images/banners/hero_network.jpg',
-    isActive: true,
-    displayOrder: 3,
-  },
-];
+import { DEFAULT_HERO_BANNERS } from '@/lib/settings-constants';
 
 export async function GET() {
   try {

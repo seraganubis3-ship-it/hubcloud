@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth-guard';
-import { DEFAULT_HERO_BANNERS } from '@/app/api/banners/route';
+import { DEFAULT_HERO_BANNERS } from '@/lib/settings-constants';
 
 export async function GET(request: Request) {
   const auth = await requireAdmin(request);

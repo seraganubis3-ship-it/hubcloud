@@ -1,0 +1,53 @@
+export const DEFAULT_STORE_SETTINGS = {
+  storeName: 'HUB CLOUD IT Solutions',
+  supportPhone: '01019569891',
+  supportEmail: 's@hubcloud.info',
+  showroomAddress: '181 شارع السودان - الدور التاسع - المهندسين، الجيزة',
+  commercialRegistry: '142083',
+  officialWarrantyPartner: 'موزع وشريك معتمد لتجهيزات الشبكات ومحطات العمل',
+  workingHours: 'السبت إلى الخميس: 9:00 ص - 9:00 م (الجمعة عطلة أسبوعية)',
+  freeShippingThreshold: 5000,
+  standardDeliveryFee: 75,
+  dispatchCutoff: '16:00',
+  vodafoneCashWallet: '01019569891',
+  instapayIpa: 'hubcloud@instapay',
+  instapayPhone: '01019569891',
+  socialLinks: [
+    { id: 'whatsapp', name: 'WhatsApp Direct', url: 'https://wa.me/201019569891', enabled: true },
+    { id: 'facebook', name: 'Facebook Page', url: 'https://facebook.com/hubcloud.eg', enabled: true },
+    { id: 'instagram', name: 'Instagram', url: 'https://instagram.com/hubcloud.eg', enabled: true },
+    { id: 'linkedin', name: 'LinkedIn Company', url: 'https://linkedin.com/company/hubcloud-eg', enabled: true },
+    { id: 'tiktok', name: 'TikTok', url: 'https://tiktok.com/@hubcloud.eg', enabled: false },
+    { id: 'youtube', name: 'YouTube Channel', url: 'https://youtube.com/@hubcloud-eg', enabled: false },
+  ],
+};
+
+export const DEFAULT_HERO_BANNERS = [
+  {
+    id: 'banner-1',
+    title: 'High-End Laptops & Mobile Workstations',
+    titleAr: 'لابتوبات ومحطات عمل احترافية فائقة الأداء',
+    primaryHref: '/category/laptops',
+    image: '/images/banners/hero_laptops.jpg',
+    isActive: true,
+    displayOrder: 1,
+  },
+  {
+    id: 'banner-2',
+    title: 'High-Performance Desktops & Workstations',
+    titleAr: 'محطات عمل وأجهزة ديسكتوب فائقة القوة',
+    primaryHref: '/category/desktops',
+    image: '/images/banners/hero_desktops.jpg',
+    isActive: true,
+    displayOrder: 2,
+  },
+  {
+    id: 'banner-3',
+    title: 'Enterprise Infrastructure & Networking Solutions',
+    titleAr: 'سويتشات Cisco المدارة وجدران حماية Fortinet',
+    primaryHref: '/category/network-device',
+    image: '/images/banners/hero_network.jpg',
+    isActive: true,
+    displayOrder: 3,
+  },
+];
