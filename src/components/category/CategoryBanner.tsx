@@ -107,7 +107,8 @@ const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     badgeEn: 'DOCUMENT DIGITIZATION',
     badgeAr: 'أرشفة رقمية ومسح ضوئي عالي السرعة',
     pillColor: 'bg-teal-500/20 text-teal-300 border-teal-400/40',
-    bannerImage: '/images/banners/cat_scanners.jpg',
+    bannerImage: '/images/banners/cat_scanners.png',
+    isFullGraphicBanner: true,
     perks: [
       { en: 'Up to 70 ppm Duplex ADF', ar: 'سرعة مسح تصل لـ 70 ورقة/دقيقة' },
       { en: '600 DPI Optical Clarity', ar: 'دقة بصرية فائقة 600 DPI' },
@@ -168,7 +169,7 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
 
   if (config.isFullGraphicBanner) {
     return (
-      <div className="space-y-4 mb-6 sm:mb-8">
+      <div className="mb-6 sm:mb-8">
         {/* Flat, seamless Banner Card embedded cleanly into the page */}
         <div
           className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 dark:border-slate-800/80 bg-slate-100/60 dark:bg-slate-900/40 w-full"
@@ -184,33 +185,6 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
             className="object-cover object-center w-full h-full select-none"
             sizes="(max-width: 1536px) 100vw, 1536px"
           />
-        </div>
-
-        {/* Quick Filter Tag Chips & Guarantees bar below the banner */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 px-1">
-          {config.chips.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11.5px] font-bold text-slate-500 dark:text-slate-400 me-1">
-                {isRtl ? 'الفئات الأكثر طلباً:' : 'Popular:'}
-              </span>
-              {config.chips.map((chip, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 rounded-full bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 text-[11.5px] font-semibold text-slate-700 dark:text-slate-300 shadow-2xs hover:border-hub-blue hover:text-hub-blue hover:scale-105 transition-all cursor-default select-none"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Trust Guarantee Badges */}
-          <div className="flex items-center gap-3 text-[11.5px] text-slate-500 dark:text-slate-400 font-medium">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              {isRtl ? 'أجهزة أصلية 100% بضمان محلي معتمد' : '100% Genuine with Official Warranty'}
-            </span>
-          </div>
         </div>
       </div>
     );
@@ -265,23 +239,6 @@ export const CategoryBanner: React.FC<CategoryBannerProps> = ({
               </div>
             ))}
           </div>
-
-          {/* Popular Tag Chips */}
-          {config.chips.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-[11px] font-bold text-slate-400 me-1">
-                {isRtl ? 'الفئات الأكثر طلباً:' : 'Popular:'}
-              </span>
-              {config.chips.map((chip, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-1 rounded-lg bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-medium text-slate-200 hover:bg-white/20 transition-colors"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Dedicated Uncropped Photographic Banner Image (Exact 16:9 Aspect Ratio) */}

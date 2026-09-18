@@ -33,9 +33,9 @@ interface BannerItem {
 }
 
 const PRESET_IMAGES = [
-  { label: 'لابتوبات ومحطات عمل', url: '/images/banners/hero_laptops.jpg' },
-  { label: 'كمبيوتر وشاشات', url: '/images/banners/hero_desktops.jpg' },
-  { label: 'سويتشات وشبكات', url: '/images/banners/hero_network.jpg' },
+  { label: 'لابتوبات ومحطات عمل', url: '/images/banners/hero_laptops.png' },
+  { label: 'كمبيوتر وشاشات', url: '/images/banners/hero_desktops.png' },
+  { label: 'سويتشات وشبكات', url: '/images/banners/hero_network.png' },
   { label: 'أنظمة أمنية وسحابية', url: '/images/banners/hubcloud-solutions-banner.png' },
 ];
 
@@ -54,7 +54,7 @@ export default function AdminBannersPage() {
   const [title, setTitle] = useState('');
   const [titleAr, setTitleAr] = useState('');
   const [primaryHref, setPrimaryHref] = useState('/products');
-  const [image, setImage] = useState('/images/banners/hero_laptops.jpg');
+  const [image, setImage] = useState('/images/banners/hero_laptops.png');
   const [isActive, setIsActive] = useState(true);
   const [displayOrder, setDisplayOrder] = useState(1);
 
@@ -385,7 +385,7 @@ export default function AdminBannersPage() {
                   required
                   value={image}
                   onChange={(e) => setImage(e.target.value)}
-                  placeholder="/images/banners/hero_laptops.jpg"
+                  placeholder="/images/banners/hero_laptops.png"
                   className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-blue-500"
                 />
 
