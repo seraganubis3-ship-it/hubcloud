@@ -28,6 +28,7 @@ import {
   Eye,
   CreditCard
 } from 'lucide-react';
+import { EGYPT_GOVERNORATES } from '@/lib/egypt-locations';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -58,7 +59,10 @@ export default function AccountPage() {
   const [newAddrTitle, setNewAddrTitle] = useState('');
   const [newAddrFullName, setNewAddrFullName] = useState(currentUser?.name || '');
   const [newAddrPhone, setNewAddrPhone] = useState(currentUser?.phone || '');
-  const [newAddrCity, setNewAddrCity] = useState('Cairo');
+  const [newAddrGov, setNewAddrGov] = useState('cairo');
+  const [newAddrCity, setNewAddrCity] = useState('مدينة نصر');
+  const [isNewAddrCustom, setIsNewAddrCustom] = useState(false);
+  const [newAddrCustomCity, setNewAddrCustomCity] = useState('');
   const [newAddrDetails, setNewAddrDetails] = useState('');
 
   // Security Form
@@ -160,17 +164,27 @@ export default function AccountPage() {
       showToast(isRtl ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields', 'error');
       return;
     }
+    const currentGov = EGYPT_GOVERNORATES.find(g => g.id === newAddrGov) || EGYPT_GOVERNORATES[0];
+    const finalCity = isNewAddrCustom ? newAddrCustomCity.trim() : newAddrCity;
+    if (!finalCity) {
+      showToast(isRtl ? 'يرجى تحديد أو كتابة المدينة أو المركز' : 'Please specify city or district', 'error');
+      return;
+    }
+    const fullCity = `${currentGov.nameAr} - ${finalCity}`;
     addAddress({
       title: newAddrTitle,
       fullName: newAddrFullName,
       phone: newAddrPhone,
-      city: newAddrCity,
+      city: fullCity,
       addressDetails: newAddrDetails,
       isDefault: savedAddresses.length === 0
     });
     setIsAddAddressOpen(false);
     setNewAddrTitle('');
     setNewAddrDetails('');
+    setNewAddrCustomCity('');
+    setIsNewAddrCustom(false);
+    showToast(isRtl ? 'تم إضافة العنوان بنجاح' : 'Address added successfully', 'success');
   };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -608,22 +622,88 @@ export default function AccountPage() {
                         />
                       </div>
 
+                      {/* Governorate */}
                       <div>
                         <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                          {isRtl ? 'المحافظة' : 'Governorate / City'}
+                          {isRtl ? 'المحافظة' : 'Governorate'} *
                         </label>
                         <select
-                          value={newAddrCity}
-                          onChange={(e) => setNewAddrCity(e.target.value)}
-                          className="w-full px-3 py-2 text-[12px] border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 bg-white"
+                          value={newAddrGov}
+                          onChange={(e) => {
+                            const govId = e.target.value;
+                            setNewAddrGov(govId);
+                            const gov = EGYPT_GOVERNORATES.find(g => g.id === govId);
+                            if (gov && gov.cities.length > 0) {
+                              setNewAddrCity(gov.cities[0].nameAr);
+                              setIsNewAddrCustom(false);
+                              setNewAddrCustomCity('');
+                            } else {
+                              setIsNewAddrCustom(true);
+                              setNewAddrCustomCity('');
+                            }
+                          }}
+                          className="w-full px-3 py-2 text-[12px] border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 bg-white font-medium"
                         >
-                          <option value="Cairo">القاهرة (Cairo)</option>
-                          <option value="Giza">الجيزة (Giza)</option>
-                          <option value="Alexandria">الإسكندرية (Alexandria)</option>
-                          <option value="Sharqia">الشرقية (Sharqia)</option>
-                          <option value="Dakahlia">الدقهلية (Dakahlia)</option>
-                          <option value="Red Sea">البحر الأحمر (Red Sea)</option>
+                          {EGYPT_GOVERNORATES.map(gov => (
+                            <option key={gov.id} value={gov.id}>
+                              {isRtl ? `${gov.nameAr} (${gov.nameEn})` : `${gov.nameEn} (${gov.nameAr})`}
+                            </option>
+                          ))}
                         </select>
+                      </div>
+
+                      {/* City / District */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                          {isRtl ? 'المدينة / المركز / الحي' : 'City / Center / District'} *
+                        </label>
+                        {!isNewAddrCustom ? (
+                          <select
+                            value={newAddrCity}
+                            onChange={(e) => {
+                              if (e.target.value === '__custom__') {
+                                setIsNewAddrCustom(true);
+                                setNewAddrCustomCity('');
+                              } else {
+                                setNewAddrCity(e.target.value);
+                              }
+                            }}
+                            className="w-full px-3 py-2 text-[12px] border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 bg-white font-medium"
+                          >
+                            {(EGYPT_GOVERNORATES.find(g => g.id === newAddrGov) || EGYPT_GOVERNORATES[0]).cities.map(c => (
+                              <option key={c.nameAr} value={c.nameAr}>
+                                {isRtl ? c.nameAr : c.nameEn}
+                              </option>
+                            ))}
+                            <option value="__custom__">
+                              {isRtl ? '➕ منطقة أو مركز آخر (كتابة يدوية)...' : '➕ Other area (Enter manually)...'}
+                            </option>
+                          </select>
+                        ) : (
+                          <div className="space-y-1">
+                            <input
+                              type="text"
+                              required
+                              value={newAddrCustomCity}
+                              onChange={(e) => setNewAddrCustomCity(e.target.value)}
+                              placeholder={isRtl ? 'اكتب اسم المدينة أو المركز أو الحي' : 'Enter city or district'}
+                              className="w-full px-3 py-2 text-[12px] border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsNewAddrCustom(false);
+                                const gov = EGYPT_GOVERNORATES.find(g => g.id === newAddrGov);
+                                if (gov && gov.cities.length > 0) {
+                                  setNewAddrCity(gov.cities[0].nameAr);
+                                }
+                              }}
+                              className="text-[10px] font-bold text-blue-600 hover:underline block"
+                            >
+                              {isRtl ? '↩ العودة للقائمة' : '↩ Back to list'}
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="sm:col-span-2">

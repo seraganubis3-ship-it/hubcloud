@@ -50,27 +50,27 @@ export function validateOrderInput(body: any): ValidationResult<ValidatedOrderPa
 
   const customerName = typeof body.customerName === 'string' ? body.customerName.trim() : '';
   if (!customerName || customerName.length < 2) {
-    errors.push('Full name must be at least 2 characters.');
+    errors.push('الاسم بالكامل مطلوب / Full name must be at least 2 characters.');
   }
 
   const customerEmail = typeof body.customerEmail === 'string' ? body.customerEmail.trim() : '';
   if (!customerEmail || !isValidEmail(customerEmail)) {
-    errors.push('A valid email address is required.');
+    errors.push('يرجى إدخال بريد إلكتروني صحيح / A valid email address is required.');
   }
 
   const customerPhone = typeof body.customerPhone === 'string' ? body.customerPhone.trim() : '';
   if (!customerPhone || !isValidPhone(customerPhone)) {
-    errors.push('A valid phone number is required.');
+    errors.push('يرجى إدخال رقم هاتف مصري صحيح / A valid phone number is required.');
   }
 
   const city = typeof body.city === 'string' ? body.city.trim() : '';
-  if (!city) {
-    errors.push('City is required.');
+  if (!city || city.length < 2) {
+    errors.push('يرجى تحديد المحافظة والمدينة / City and governorate are required.');
   }
 
   const address = typeof body.address === 'string' ? body.address.trim() : '';
-  if (!address || address.length < 5) {
-    errors.push('A detailed address is required (minimum 5 characters).');
+  if (!address || address.length < 3) {
+    errors.push('يرجى كتابة تفاصيل العنوان والشارع بشكل واضح / A detailed address is required.');
   }
 
   const paymentMethod = typeof body.paymentMethod === 'string' ? body.paymentMethod.trim() : 'cod';
