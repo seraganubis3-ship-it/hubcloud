@@ -30,6 +30,7 @@ import {
   Phone
 } from 'lucide-react';
 import { AnimatedSearchPlaceholder } from '@/components/ui/AnimatedSearchPlaceholder';
+import { parseFullName } from '@/lib/validation';
 
 export const MainHeader: React.FC = () => {
   const router = useRouter();
@@ -272,7 +273,7 @@ export const MainHeader: React.FC = () => {
                     {currentUser.name.slice(0, 2).toUpperCase()}
                   </div>
                   <span className="text-[11px] font-bold mt-0.5 text-slate-600 group-hover:text-blue-600 transition-colors max-w-[60px] truncate hidden sm:inline">
-                    {currentUser.name.split(' ')[0]}
+                    {parseFullName(currentUser.name).firstName || currentUser.name}
                   </span>
                 </button>
 

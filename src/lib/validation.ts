@@ -141,3 +141,65 @@ export function validateOrderInput(body: any): ValidationResult<ValidatedOrderPa
   };
 }
 
+/**
+ * Parses a raw user name into first name and last name.
+ * Handles standard spaced names, CamelCase/PascalCase (e.g. AhmedElMenshawy),
+ * delimiter-separated names (dots, hyphens, underscores), and Arabic compound names.
+ */
+export function parseFullName(rawName?: string | null): { firstName: string; lastName: string } {
+  if (!rawName || typeof rawName !== 'string') {
+    return { firstName: '', lastName: '' };
+  }
+
+  const cleaned = rawName.trim();
+  if (!cleaned) {
+    return { firstName: '', lastName: '' };
+  }
+
+  // 1. If it contains whitespace already
+  if (/\s+/.test(cleaned)) {
+    const parts = cleaned.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) {
+      return { firstName: parts[0], lastName: '' };
+    }
+    const arabicCompoundPrefixes = ['عبد', 'أبو', 'ابو', 'ابن', 'أم', 'ام'];
+    if (parts.length >= 3 && arabicCompoundPrefixes.includes(parts[0])) {
+      return {
+        firstName: `${parts[0]} ${parts[1]}`,
+        lastName: parts.slice(2).join(' ')
+      };
+    }
+    return {
+      firstName: parts[0],
+      lastName: parts.slice(1).join(' ')
+    };
+  }
+
+  // 2. If no whitespace, handle CamelCase / PascalCase (e.g. "AhmedElMenshawy" -> "Ahmed ElMenshawy")
+  const camelSplit = cleaned
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z\d]+)/g, '$1 $2')
+    .trim();
+
+  if (camelSplit.includes(' ')) {
+    const parts = camelSplit.split(/\s+/).filter(Boolean);
+    return {
+      firstName: parts[0],
+      lastName: parts.slice(1).join(' ')
+    };
+  }
+
+  // 3. Delimiter-separated names (e.g. "ahmed.elmenshawy", "ahmed_elmenshawy")
+  if (/[-_.]/.test(cleaned)) {
+    const parts = cleaned.split(/[-_.]+/).filter(Boolean);
+    if (parts.length > 1) {
+      return {
+        firstName: parts[0],
+        lastName: parts.slice(1).join(' ')
+      };
+    }
+  }
+
+  // 4. Single-word name fallback
+  return { firstName: cleaned, lastName: '' };
+}

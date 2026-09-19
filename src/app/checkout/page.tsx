@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { EGYPT_GOVERNORATES } from '@/lib/egypt-locations';
 import { SavedAddress } from '@/types';
+import { parseFullName } from '@/lib/validation';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -44,9 +45,11 @@ export default function CheckoutPage() {
     createOrder
   } = useStore();
 
+  const initialName = parseFullName(currentUser?.name);
+
   const [formData, setFormData] = useState({
-    firstName: currentUser ? currentUser.name.split(' ')[0] : '',
-    lastName: currentUser ? currentUser.name.split(' ').slice(1).join(' ') || '' : '',
+    firstName: initialName.firstName,
+    lastName: initialName.lastName,
     email: currentUser?.email || '',
     phone: currentUser?.phone || '',
     postalCode: '',
@@ -98,10 +101,57 @@ export default function CheckoutPage() {
     }
   };
 
+  // Auto-sync customer details when currentUser loads or updates
+  React.useEffect(() => {
+    if (currentUser) {
+      const { firstName, lastName } = parseFullName(currentUser.name);
+      setFormData(prev => {
+        let newFirst = prev.firstName;
+        let newLast = prev.lastName;
+
+        // If firstName is empty or equals raw unsplit name, update with parsed firstName
+        if (!newFirst || newFirst === currentUser.name) {
+          newFirst = firstName;
+        }
+
+        // If lastName is empty, take the parsed lastName
+        if (!newLast) {
+          newLast = lastName;
+        }
+
+        // If lastName is still empty, attempt to parse newFirst
+        if (newFirst && !newLast) {
+          const parsed = parseFullName(newFirst);
+          if (parsed.lastName) {
+            newFirst = parsed.firstName;
+            newLast = parsed.lastName;
+          }
+        }
+
+        return {
+          ...prev,
+          firstName: newFirst,
+          lastName: newLast,
+          email: prev.email || currentUser.email || '',
+          phone: prev.phone || currentUser.phone || '',
+        };
+      });
+    }
+  }, [currentUser]);
+
   // Pre-fill from saved addresses or first address if present
   React.useEffect(() => {
     if (savedAddresses && savedAddresses.length > 0) {
       const first = savedAddresses[0];
+      if (first.fullName) {
+        const { firstName, lastName } = parseFullName(first.fullName);
+        setFormData(prev => ({
+          ...prev,
+          firstName: prev.firstName || firstName,
+          lastName: prev.lastName || lastName,
+          phone: prev.phone || first.phone || '',
+        }));
+      }
       const foundGov = EGYPT_GOVERNORATES.find(g =>
         first.city.includes(g.nameAr) || first.city.toLowerCase().includes(g.nameEn.toLowerCase())
       );
@@ -146,7 +196,44 @@ export default function CheckoutPage() {
     if (addr.addressDetails) {
       setStreetAddress(addr.addressDetails);
     }
+    if (addr.fullName) {
+      const { firstName, lastName } = parseFullName(addr.fullName);
+      setFormData(prev => ({
+        ...prev,
+        firstName: firstName || prev.firstName,
+        lastName: lastName || prev.lastName,
+        phone: addr.phone || prev.phone,
+      }));
+    }
     showToast(isRtl ? `تم تطبيق العنوان: ${addr.title}` : `Applied address: ${addr.title}`, 'info');
+  };
+
+  const handleFirstNameChange = (val: string) => {
+    if (val.includes(' ') && !formData.lastName.trim()) {
+      const parsed = parseFullName(val);
+      if (parsed.lastName) {
+        setFormData(prev => ({
+          ...prev,
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+        }));
+        return;
+      }
+    }
+    setFormData(prev => ({ ...prev, firstName: val }));
+  };
+
+  const handleFirstNameBlur = () => {
+    if (formData.firstName && !formData.lastName.trim()) {
+      const parsed = parseFullName(formData.firstName);
+      if (parsed.lastName) {
+        setFormData(prev => ({
+          ...prev,
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+        }));
+      }
+    }
   };
 
   const handleGovChange = (govId: string) => {
@@ -177,9 +264,32 @@ export default function CheckoutPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Auto-split if user entered full name in firstName field
+    let activeFirstName = formData.firstName.trim();
+    let activeLastName = formData.lastName.trim();
+
+    if (activeFirstName && !activeLastName) {
+      const parsed = parseFullName(activeFirstName);
+      if (parsed.lastName) {
+        activeFirstName = parsed.firstName;
+        activeLastName = parsed.lastName;
+        setFormData(prev => ({
+          ...prev,
+          firstName: activeFirstName,
+          lastName: activeLastName,
+        }));
+      }
+    }
+
     // Client-side validations with clear localized Arabic messages
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      showToast(isRtl ? 'يرجى كتابة الاسم الأول واسم العائلة بالكامل' : 'Please enter your full name', 'error');
+    if (!activeFirstName) {
+      showToast(isRtl ? 'يرجى كتابة الاسم بالكامل' : 'Please enter your name', 'error');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!activeLastName && activeFirstName.length < 3) {
+      showToast(isRtl ? 'يرجى كتابة الاسم الأول واسم العائلة' : 'Please enter your first and last name', 'error');
       setIsSubmitting(false);
       return;
     }
@@ -203,6 +313,7 @@ export default function CheckoutPage() {
       return;
     }
 
+    const finalCustomerName = `${activeFirstName} ${activeLastName}`.trim();
     const finalNotes = [
       formData.notes,
       paymentReference ? `[Payment Ref / Wallet: ${paymentReference}]` : '',
@@ -216,7 +327,7 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+          customerName: finalCustomerName,
           customerEmail: formData.email,
           customerPhone: cleanPhone,
           city: fullDestinationCity,
@@ -256,7 +367,7 @@ export default function CheckoutPage() {
       // Sync into StoreContext & LocalStorage
       const created = createOrder({
         id: serverOrderId,
-        customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+        customerName: finalCustomerName,
         customerEmail: formData.email,
         customerPhone: cleanPhone,
         shippingAddress: fullAddressDetails,
@@ -326,25 +437,32 @@ export default function CheckoutPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'الاسم الأول' : 'First Name'} *</label>
+                  <label htmlFor="firstName" className="text-[12px] font-bold text-gray-700 block mb-1">
+                    {isRtl ? 'الاسم الأول' : 'First Name'} *
+                  </label>
                   <input
                     type="text"
                     id="firstName"
                     autoComplete="given-name"
                     required
                     value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    onChange={(e) => handleFirstNameChange(e.target.value)}
+                    onBlur={handleFirstNameBlur}
                     className="w-full px-3.5 py-2 text-[13px] border border-gray-300 rounded-xl focus:outline-none focus:border-hub-blue"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="lastName" className="text-[12px] font-bold text-gray-700 block mb-1">{isRtl ? 'اسم العائلة' : 'Last Name'} *</label>
+                  <label htmlFor="lastName" className="text-[12px] font-bold text-gray-700 block mb-1">
+                    {isRtl ? 'اسم العائلة' : 'Last Name'}{' '}
+                    <span className="text-gray-400 font-normal text-[11px]">
+                      ({isRtl ? 'أو الاسم الثاني' : 'Optional / Surname'})
+                    </span>
+                  </label>
                   <input
                     type="text"
                     id="lastName"
                     autoComplete="family-name"
-                    required
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                     className="w-full px-3.5 py-2 text-[13px] border border-gray-300 rounded-xl focus:outline-none focus:border-hub-blue"
